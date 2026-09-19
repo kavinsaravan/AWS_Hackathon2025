@@ -1,6 +1,8 @@
 # SafePath - AI-Powered Pedestrian Safety Routing
 
-SafePath helps users find the safest walking routes in San Francisco by analyzing real-time crime data, infrastructure hazards, and temporal patterns to recommend routes that prioritize personal safety.
+> Built for AWS Hackathon 2025 | A smart routing application that prioritizes pedestrian safety over speed
+
+A web application that helps users find the safest walking routes in San Francisco by analyzing real-time crime data, infrastructure hazards, and temporal patterns to recommend routes that prioritize personal safety.
 
 ## 🎯 Problem Statement
 
@@ -17,7 +19,7 @@ Traditional navigation apps optimize for speed and distance but ignore critical 
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                  Mobile App (React Native)                   │
+│                    Web App (React)                           │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ↓
@@ -54,11 +56,13 @@ Traditional navigation apps optimize for speed and distance but ignore critical 
 - **CloudWatch Events** - Hourly scheduled data refresh
 - **CloudFormation** - Infrastructure as Code
 
-### Frontend (Mobile App)
-- **React Native** - Cross-platform iOS/Android
-- **Expo** - Development and build tooling
+### Frontend (Web App)
+- **React** - Modern web framework
 - **TypeScript** - Type-safe JavaScript
+- **Tailwind CSS** - Utility-first styling
+- **Radix UI** - Accessible component library
 - **Leaflet** - Interactive maps
+- **React Leaflet** - React wrapper for Leaflet
 
 ### Machine Learning
 - **Logistic Regression** - Route preference prediction
@@ -105,7 +109,6 @@ Traditional navigation apps optimize for speed and distance but ignore critical 
 - Node.js 16+ / npm or yarn
 - Python 3.11+ (for backend)
 - AWS Account (Free Tier eligible)
-- Expo CLI (`npm install -g expo-cli`)
 
 ### Installation
 
@@ -137,14 +140,14 @@ Traditional navigation apps optimize for speed and distance but ignore critical 
 **Development Mode:**
 ```bash
 npm start
-# or
-npx expo start
 ```
 
-**Options:**
-- Press `i` for iOS simulator
-- Press `a` for Android emulator
-- Scan QR code with Expo Go app for physical device
+The app will open in your default browser at `http://localhost:3000`
+
+**Production Build:**
+```bash
+npm run build
+```
 
 ### AWS Backend Deployment
 
@@ -192,10 +195,10 @@ AWS_Hackathon2025/
 │   ├── DATASF_IMPLEMENTATION.md
 │   └── ...
 │
-├── src/                     # React Native frontend
-│   ├── screens/            # 4 mobile screens
-│   ├── components/         # UI components
-│   └── services/           # ML models & API services
+├── src/                     # React web frontend
+│   ├── components/         # React components & UI primitives
+│   ├── services/           # ML models & API services
+│   └── lib/                # Utility functions
 │
 ├── public/                  # Static assets
 ├── .gitignore              # Git exclusions
