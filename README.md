@@ -1,7 +1,5 @@
 # SafePath - AI-Powered Pedestrian Safety Routing
 
-> Built for AWS Hackathon 2025 | A smart routing application that prioritizes pedestrian safety over speed
-
 SafePath helps users find the safest walking routes in San Francisco by analyzing real-time crime data, infrastructure hazards, and temporal patterns to recommend routes that prioritize personal safety.
 
 ## 🎯 Problem Statement
@@ -306,50 +304,5 @@ npm test
 npm run lint
 ```
 
-## 🌟 Future Enhancements
 
-- [ ] Real-time user crowdsourcing for incident reporting
-- [ ] Social sharing of safe routes
-- [ ] Push notifications for nearby incidents
-- [ ] Voice navigation with turn-by-turn guidance
-- [ ] Offline mode with downloaded safety data
-- [ ] Multi-city support beyond San Francisco
-- [ ] Transit integration (walking + public transport)
-- [ ] Weather impact on safety scoring
-- [ ] AI chatbot for safety queries
 
-## 🤝 Contributing
-
-This was a hackathon project built by Team 5 for AWS Hackathon 2025. While the hackathon is complete, we welcome contributions!
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👥 Team
-
-**Team 5 - AWS Hackathon 2025**
-- Charlie Sturiale
-- Yashy
-- Kavin Saravanan
-
-## 🙏 Acknowledgments
-
-- **City of San Francisco** - For providing open data APIs
-- **AWS** - For hosting the hackathon and providing cloud infrastructure
-- **GraphHopper** - For routing API services
-- **Expo & React Native** - For mobile development framework
-
-## 📧 Contact
-
-For questions or feedback, please open an issue in this repository.
-
----
-
-**Built with ❤️ for pedestrian safety**
