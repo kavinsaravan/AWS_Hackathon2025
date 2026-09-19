@@ -1,8 +1,6 @@
 # SafePath - AI-Powered Pedestrian Safety Routing
 
-> Built for AWS Hackathon 2025 | A smart routing application that prioritizes pedestrian safety over speed
-
-A web application that helps users find the safest walking routes in San Francisco by analyzing real-time crime data, infrastructure hazards, and temporal patterns to recommend routes that prioritize personal safety.
+SafePath helps pedestrians find the safest walking routes in San Francisco by analyzing real-time crime data, infrastructure hazards, and temporal patterns to recommend routes that prioritize personal safety.
 
 ## 🎯 Problem Statement
 
