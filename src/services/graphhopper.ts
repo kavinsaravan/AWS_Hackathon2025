@@ -31,7 +31,30 @@ interface RoutingResult {
  */
 export async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
   try {
-    const response = await fetch(`${GEOCODING_URL}?q=${encodeURIComponent(address)}&key=${GRAPHHOPPER_API_KEY}`)
+    // Add San Francisco location bias if address doesn't already specify a city
+    let searchQuery = address
+    const lowerAddress = address.toLowerCase()
+    const hasCityContext = lowerAddress.includes("san francisco") ||
+                          lowerAddress.includes("sf") ||
+                          lowerAddress.includes(", ca") ||
+                          lowerAddress.includes("california")
+
+    if (!hasCityContext) {
+      searchQuery = `${address}, San Francisco, CA`
+    }
+
+    // San Francisco coordinates for location bias
+    const SF_LAT = 37.7749
+    const SF_LNG = -122.4194
+
+    const params = new URLSearchParams({
+      q: searchQuery,
+      point: `${SF_LAT},${SF_LNG}`, // Bias results toward San Francisco
+      locale: "en-US",
+      key: GRAPHHOPPER_API_KEY,
+    })
+
+    const response = await fetch(`${GEOCODING_URL}?${params.toString()}`)
 
     if (!response.ok) {
       throw new Error(`Geocoding failed: ${response.statusText}`)
