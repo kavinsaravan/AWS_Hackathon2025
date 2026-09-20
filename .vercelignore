@@ -1,0 +1,9 @@
+backend/
+lambda-package/
+infrastructure/
+scripts/
+docs/
+lambda-deployment.zip
+test-event.json
+*.pyc
+__pycache__/
