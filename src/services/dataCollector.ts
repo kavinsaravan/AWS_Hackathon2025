@@ -193,7 +193,7 @@ class SafePathDataCollector {
       
       // Muni routes (NextBus API)
       // For now, we'll return placeholder data
-      const muniRoutes = [];
+      const muniRoutes: { name: string; lat: number; lng: number }[] = [];
       
       console.log(`✅ Found ${bartStations.length} BART stations`);
       

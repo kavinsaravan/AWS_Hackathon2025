@@ -1,0 +1,12 @@
+{
+  "Rules": [
+    {
+      "ID": "DeleteOldBackups",
+      "Status": "Enabled",
+      "Filter": {},
+      "Expiration": {
+        "Days": 90
+      }
+    }
+  ]
+}

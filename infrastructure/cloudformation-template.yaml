@@ -11,6 +11,27 @@ Parameters:
     Description: External API endpoint URL
 
 Resources:
+  # S3 Bucket for Crime Data Backup
+  CrimeDataBackupBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'safepath-crime-data-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldBackups
+            Status: Enabled
+            ExpirationInDays: 90
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Environment
+          Value: Production
+
   # DynamoDB Table
   ApiDataCacheTable:
     Type: AWS::DynamoDB::Table
@@ -59,6 +80,18 @@ Resources:
                   - dynamodb:UpdateItem
                   - dynamodb:DeleteItem
                 Resource: !GetAtt ApiDataCacheTable.Arn
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt CrimeDataBackupBucket.Arn
+                  - !Sub '${CrimeDataBackupBucket.Arn}/*'
 
   # Lambda Function
   ApiDataFetcherLambda:
@@ -78,6 +111,7 @@ Resources:
       Environment:
         Variables:
           DYNAMODB_TABLE_NAME: !Ref ApiDataCacheTable
+          S3_BUCKET_NAME: !Ref CrimeDataBackupBucket
           API_KEY: !Ref ApiKey
           API_ENDPOINT: !Ref ApiEndpoint
       Tags:
@@ -171,6 +205,9 @@ Outputs:
   DynamoDBTableName:
     Description: 'Name of the DynamoDB table'
     Value: !Ref ApiDataCacheTable
+  S3BucketName:
+    Description: 'Name of the S3 backup bucket'
+    Value: !Ref CrimeDataBackupBucket
   LambdaFunctionArn:
     Description: 'ARN of the Lambda function'
     Value: !GetAtt ApiDataFetcherLambda.Arn

@@ -565,7 +565,7 @@ export class ComprehensiveSafetyAnalyzer {
     return 2;
   }
 
-  private assessCrowdType(route: RouteSegment[], time: Date): string {
+  private assessCrowdType(route: RouteSegment[], time: Date): 'none' | 'commuters' | 'tourists' | 'nightlife' | 'event' | 'hostile' {
     const hour = time.getHours();
     if (hour >= 7 && hour <= 9) return 'commuters';
     if (hour >= 22 && hour <= 2) return 'nightlife';

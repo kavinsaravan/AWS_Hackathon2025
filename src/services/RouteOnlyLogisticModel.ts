@@ -200,8 +200,9 @@ export class RouteOnlyLogisticModel {
       const faster = routeA.estimatedTime < routeB.estimatedTime ? 'A' : 'B';
       reasons.push(`Route ${faster} is ${timeDiff} minutes faster`);
     }
-    
+
     // Overall safety difference
+    const safetyDifference = Math.abs(safetyA - safetyB);
     const safetyPctDiff = (safetyDifference * 100).toFixed(1);
     if (safetyDifference > 0.1) {
       reasons.push(`Route ${safer} is ${safetyPctDiff}% safer overall`);
