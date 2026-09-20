@@ -149,27 +149,36 @@ npm run build
 
 ### AWS Backend Deployment
 
-1. **Deploy CloudFormation stack**
+1. **Create S3 bucket for Lambda deployment and data backups**
    ```bash
-   cd infrastructure
-   aws cloudformation create-stack \
-     --stack-name safepath-backend \
-     --template-body file://cloudformation-template.yaml \
-     --capabilities CAPABILITY_IAM
+   export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+   aws s3 mb s3://safepath-crime-data-${AWS_ACCOUNT_ID} --region us-east-1
+   aws s3api put-bucket-versioning --bucket safepath-crime-data-${AWS_ACCOUNT_ID} --versioning-configuration Status=Enabled
    ```
 
-2. **Package Lambda functions**
+2. **Deploy infrastructure (DynamoDB, Lambda, API Gateway)**
    ```bash
-   cd backend
-   pip install -r requirements.txt -t .
-   zip -r lambda_package.zip .
+   # Note: S3 bucket must exist first (created manually in step 1)
+   # Then manually deploy Lambda, DynamoDB, and API Gateway
+   # CloudFormation stack deployment available in infrastructure/cloudformation-template.yaml
    ```
 
-3. **Upload to Lambda**
+3. **Package and deploy Lambda function**
    ```bash
+   cd lambda-package
+   zip -r ../lambda-deployment.zip .
+   aws s3 cp ../lambda-deployment.zip s3://safepath-crime-data-${AWS_ACCOUNT_ID}/
    aws lambda update-function-code \
      --function-name ApiDataFetcher \
-     --zip-file fileb://lambda_package.zip
+     --s3-bucket safepath-crime-data-${AWS_ACCOUNT_ID} \
+     --s3-key lambda-deployment.zip
+   ```
+
+4. **Update Lambda environment variables**
+   ```bash
+   aws lambda update-function-configuration \
+     --function-name ApiDataFetcher \
+     --environment "Variables={S3_BUCKET_NAME=safepath-crime-data-${AWS_ACCOUNT_ID},DYNAMODB_TABLE_NAME=ApiDataCache,API_ENDPOINT=https://data.sfgov.org/resource/wg3w-h783.json}"
    ```
 
 ## 📁 Project Structure
@@ -238,11 +247,10 @@ Filter to 4 essential datasets (~125MB)
     ↓
 AWS Lambda (scheduled hourly)
     ↓
-DynamoDB Cache (3-day TTL)
+    ├─→ DynamoDB Cache (3-day TTL)
+    └─→ S3 Backup Storage (timestamped backups)
     ↓
-S3 Backup Storage
-    ↓
-API Gateway → Mobile App
+API Gateway → Frontend App
     ↓
 ML Model Analysis
     ↓
@@ -260,10 +268,13 @@ REACT_APP_GRAPHHOPPER_API_KEY=your_api_key_here
 # AWS Configuration (for backend)
 AWS_REGION=us-east-1
 DYNAMODB_TABLE_NAME=ApiDataCache
-S3_BUCKET_NAME=my-path-risk-data
+S3_BUCKET_NAME=safepath-crime-data-{AWS_ACCOUNT_ID}
 
 # DataSF API (optional - no key required for basic use)
 DATASF_API_KEY=optional_for_higher_rate_limits
+
+# AWS Backend API Endpoint
+REACT_APP_API_ENDPOINT=https://your-api-id.execute-api.us-east-1.amazonaws.com/prod
 ```
 
 ## 📈 Performance Metrics
