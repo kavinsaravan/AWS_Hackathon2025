@@ -22,10 +22,16 @@ crime_table = dynamodb.Table(crime_table_name)
 
 
 def decimal_default(obj):
-    """Helper to serialize Decimal objects"""
+    """Helper to serialize Decimal and numpy objects"""
     if isinstance(obj, Decimal):
         return float(obj)
-    raise TypeError
+    # Handle numpy types
+    import numpy as np
+    if isinstance(obj, (np.integer, np.floating)):
+        return float(obj)
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
 
 def get_cached_crime_data():

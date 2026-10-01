@@ -68,17 +68,25 @@ class HotspotDetector:
                 'params': {'eps_km': self.eps_km, 'min_samples': self.min_samples}
             }
 
-        # Extract coordinates
+        # Extract coordinates and keep track of incidents with valid coords
         coords = []
+        incidents_with_coords = []
         for incident in incidents:
-            if 'intersection_point' in incident and 'coordinates' in incident['intersection_point']:
+            if 'point' in incident and 'coordinates' in incident['point']:
+                # DynamoDB cached format: {'type': 'Point', 'coordinates': [lng, lat]}
+                lng, lat = incident['point']['coordinates']
+                coords.append([lat, lng])
+                incidents_with_coords.append(incident)
+            elif 'intersection_point' in incident and 'coordinates' in incident['intersection_point']:
                 # SF Open Data format: [longitude, latitude]
                 lng, lat = incident['intersection_point']['coordinates']
                 coords.append([lat, lng])
+                incidents_with_coords.append(incident)
             elif 'point_geom' in incident:
                 # 311 data format
                 lng, lat = incident['point_geom']['coordinates']
                 coords.append([lat, lng])
+                incidents_with_coords.append(incident)
 
         if len(coords) < self.min_samples:
             return {
@@ -112,7 +120,7 @@ class HotspotDetector:
             # Get all points in this cluster
             cluster_mask = labels == cluster_id
             cluster_coords = coords_array[cluster_mask]
-            cluster_incidents = [incidents[i] for i in range(len(incidents)) if labels[i] == cluster_id]
+            cluster_incidents = [incidents_with_coords[i] for i in range(len(incidents_with_coords)) if labels[i] == cluster_id]
 
             # Calculate cluster metadata
             hotspot = self._calculate_cluster_metadata(
@@ -149,15 +157,22 @@ class HotspotDetector:
             Dictionary with cluster information
         """
 
-        # Extract coordinates
+        # Extract coordinates and keep track of incidents with valid coords
         coords = []
+        incidents_with_coords = []
         for incident in incidents:
-            if 'intersection_point' in incident:
+            if 'point' in incident and 'coordinates' in incident['point']:
+                lng, lat = incident['point']['coordinates']
+                coords.append([lat, lng])
+                incidents_with_coords.append(incident)
+            elif 'intersection_point' in incident:
                 lng, lat = incident['intersection_point']['coordinates']
                 coords.append([lat, lng])
+                incidents_with_coords.append(incident)
             elif 'point_geom' in incident:
                 lng, lat = incident['point_geom']['coordinates']
                 coords.append([lat, lng])
+                incidents_with_coords.append(incident)
 
         if len(coords) < n_clusters:
             return {'hotspots': [], 'total_clusters': 0, 'algorithm': 'K-means'}
@@ -173,7 +188,7 @@ class HotspotDetector:
         for cluster_id in range(n_clusters):
             cluster_mask = labels == cluster_id
             cluster_coords = coords_array[cluster_mask]
-            cluster_incidents = [incidents[i] for i in range(len(incidents)) if labels[i] == cluster_id]
+            cluster_incidents = [incidents_with_coords[i] for i in range(len(incidents_with_coords)) if labels[i] == cluster_id]
 
             if len(cluster_incidents) < 3:
                 continue  # Skip small clusters
