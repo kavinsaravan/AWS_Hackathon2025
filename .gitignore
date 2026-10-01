@@ -49,3 +49,8 @@ Thumbs.db
 
 # Generated data (can be recreated with scripts)
 data/
+
+# Lambda deployment packages (too large for git)
+backend/lambda-hotspot-package/
+backend/*.zip
+*.zip
