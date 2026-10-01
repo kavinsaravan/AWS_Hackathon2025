@@ -65,6 +65,9 @@ Traditional navigation apps optimize for speed and distance but ignore critical 
 ### Machine Learning
 - **Logistic Regression** - Route preference prediction
 - **Multi-factor Safety Analyzer** - 6-dimension risk scoring
+- **DBSCAN Clustering** - Crime hotspot detection
+- **K-means Clustering** - Alternative clustering comparison
+- **scikit-learn** - Machine learning algorithms
 - **NumPy + Pandas** - Data processing
 - **Geopy** - Geospatial calculations
 
@@ -100,6 +103,14 @@ Traditional navigation apps optimize for speed and distance but ignore critical 
 - **30+ input features**: User profile, route characteristics, temporal factors
 - **Binary classification**: Predicts user route preference
 - **Comprehensive analyzer**: 6 risk dimensions with specific warnings
+
+### 🔴 Crime Hotspot Detection
+- **DBSCAN clustering algorithm**: Identifies statistically significant clusters of unsafe areas
+- **Risk-level classification**: Auto-classifies hotspots as High/Medium/Low based on severity
+- **Interactive visualization**: Click hotspots on map for detailed crime breakdown
+- **Configurable parameters**: Adjust cluster size (eps) and density (min_samples)
+- **Real-time updates**: Hotspots recalculated from latest crime data
+- **Optional map layer**: Toggle visibility without affecting route display
 
 ## 🚀 Getting Started
 
