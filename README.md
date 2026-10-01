@@ -276,17 +276,6 @@ DATASF_API_KEY=optional_for_higher_rate_limits
 # AWS Backend API Endpoint
 REACT_APP_API_ENDPOINT=https://your-api-id.execute-api.us-east-1.amazonaws.com/prod
 ```
-
-## 📈 Performance Metrics
-
-- **API Response Time**: <500ms average
-- **Route Calculation**: <2s for 3 routes
-- **Data Freshness**:
-  - Crime data: Hourly updates
-  - 311 hazards: 15-minute updates
-  - Police calls: 5-minute updates
-- **Cache Hit Rate**: ~85% (3-day TTL)
-
 ## 🎯 Use Cases
 
 1. **Night Commuters** - Find well-lit, populated routes
