@@ -2,7 +2,7 @@
 
 SafePath helps pedestrians find the safest walking routes in San Francisco by analyzing real-time crime data, infrastructure hazards, and temporal patterns to recommend routes that prioritize personal safety.
 
-## 🎯 Problem Statement
+## Problem Statement
 
 Traditional navigation apps optimize for speed and distance but ignore critical safety factors:
 - Recent crime incidents in the area
@@ -13,7 +13,7 @@ Traditional navigation apps optimize for speed and distance but ignore critical 
 
 **SafePath solves this** by combining real-time safety data with intelligent routing.
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -287,14 +287,6 @@ DATASF_API_KEY=optional_for_higher_rate_limits
 # AWS Backend API Endpoint
 REACT_APP_API_ENDPOINT=https://your-api-id.execute-api.us-east-1.amazonaws.com/prod
 ```
-## 🎯 Use Cases
-
-1. **Night Commuters** - Find well-lit, populated routes
-2. **Tourists** - Avoid high-crime areas while sightseeing
-3. **Solo Walkers** - Prioritize safety over speed
-4. **Elderly/Mobility-Impaired** - Avoid construction, broken sidewalks
-5. **Parents** - Safe routes to/from schools
-6. **Event-Goers** - Navigate safely after concerts, nightlife
 
 ## 🛠️ Development
 
