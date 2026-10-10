@@ -1,6 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'SafePath incident snapshots and on-demand route scoring'
-
+Description: Lambda API Data Fetcher with DynamoDB Cache and 3-day TTL
 Parameters:
   ApiKey:
     Type: String
@@ -9,103 +8,83 @@ Parameters:
   ApiEndpoint:
     Type: String
     Description: External API endpoint URL
-
+  LambdaDeploymentBucket:
+    Type: String
+    Description: S3 bucket containing Lambda release ZIPs
+  LambdaDeploymentKey:
+    Type: String
+    Description: Immutable S3 release key
+  LambdaDeploymentCodeSha256:
+    Type: String
+    Description: Base64 SHA256 of the deployed Lambda ZIP
   DataSfToken:
     Type: String
     Default: ''
     NoEcho: true
-    Description: Optional Socrata app token for DataSF
-  LambdaDeploymentBucket:
-    Type: String
-    Description: Existing S3 bucket containing the packaged Lambda code (same AWS region)
-  LambdaDeploymentKey:
-    Type: String
-    Description: S3 key of the ZIP produced by scripts/package_routing_backend.sh
-
+    Description: Optional DataSF app token
 Resources:
-  # S3 Bucket for Crime Data Backup
-  CrimeDataBackupBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub 'safepath-crime-data-${AWS::AccountId}'
-      VersioningConfiguration:
-        Status: Enabled
-      LifecycleConfiguration:
-        Rules:
-          - Id: DeleteOldBackups
-            Status: Enabled
-            ExpirationInDays: 90
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-      Tags:
-        - Key: Environment
-          Value: Production
-
-  # DynamoDB Table
   ApiDataCacheTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: ApiDataCache
       AttributeDefinitions:
-        - AttributeName: data_id
-          AttributeType: S
+      - AttributeName: data_id
+        AttributeType: S
       KeySchema:
-        - AttributeName: data_id
-          KeyType: HASH
+      - AttributeName: data_id
+        KeyType: HASH
       BillingMode: PAY_PER_REQUEST
       TimeToLiveSpecification:
         AttributeName: ttl
         Enabled: true
       Tags:
-        - Key: Environment
-          Value: Production
-
-  # Lambda Execution Role
+      - Key: Environment
+        Value: Production
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName: DynamoDBAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - dynamodb:PutItem
-                  - dynamodb:GetItem
-                  - dynamodb:Scan
-                  - dynamodb:Query
-                  - dynamodb:UpdateItem
-                  - dynamodb:DeleteItem
-                Resource: !GetAtt ApiDataCacheTable.Arn
-        - PolicyName: S3Access
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:PutObject
-                  - s3:GetObject
-                  - s3:ListBucket
-                Resource:
-                  - !GetAtt CrimeDataBackupBucket.Arn
-                  - !Sub '${CrimeDataBackupBucket.Arn}/*'
-
-  # Lambda Function
+      - PolicyName: DynamoDBAccess
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:Scan
+            - dynamodb:Query
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            Resource:
+              Fn::GetAtt:
+              - ApiDataCacheTable
+              - Arn
+      - PolicyName: S3Access
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:ListBucket
+            Resource:
+            - Fn::GetAtt:
+              - CrimeDataBackupBucket
+              - Arn
+            - Fn::Sub: ${CrimeDataBackupBucket.Arn}/*
   ApiDataFetcherLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -113,24 +92,35 @@ Resources:
       Runtime: python3.11
       Handler: lambda_fetch_api.lambda_handler
       Code:
-        S3Bucket: !Ref LambdaDeploymentBucket
-        S3Key: !Ref LambdaDeploymentKey
-      Role: !GetAtt LambdaExecutionRole.Arn
+        S3Bucket:
+          Ref: LambdaDeploymentBucket
+        S3Key:
+          Ref: LambdaDeploymentKey
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
       Timeout: 60
       MemorySize: 256
       Environment:
         Variables:
-          DYNAMODB_TABLE_NAME: !Ref ApiDataCacheTable
-          S3_BUCKET_NAME: !Ref CrimeDataBackupBucket
-          API_KEY: !Ref ApiKey
-          API_ENDPOINT: !Ref ApiEndpoint
-          DATASF_API_KEY: !Ref DataSfToken
+          DYNAMODB_TABLE_NAME:
+            Ref: ApiDataCacheTable
+          API_KEY:
+            Ref: ApiKey
+          API_ENDPOINT:
+            Ref: ApiEndpoint
+          S3_BUCKET_NAME:
+            Ref: CrimeDataBackupBucket
           SAFETY_CACHE_MAX_AGE_SECONDS: '300'
+          DATASF_API_KEY:
+            Ref: DataSfToken
       Tags:
-        - Key: Environment
-          Value: Production
-
-  # API Gateway
+      - Key: Environment
+        Value: Production
+    Metadata:
+      SafePathCodeSha256:
+        Ref: LambdaDeploymentCodeSha256
   ApiGateway:
     Type: AWS::ApiGatewayV2::Api
     Properties:
@@ -138,115 +128,133 @@ Resources:
       ProtocolType: HTTP
       CorsConfiguration:
         AllowOrigins:
-          - '*'
+        - '*'
         AllowMethods:
-          - GET
-          - POST
-          - OPTIONS
+        - GET
+        - POST
+        - OPTIONS
         AllowHeaders:
-          - '*'
-
-  # Lambda Permission for API Gateway
+        - '*'
   ApiGatewayLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Ref ApiDataFetcherLambda
+      FunctionName:
+        Ref: ApiDataFetcherLambda
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/*/*'
-
-  # API Gateway Integration
+      SourceArn:
+        Fn::Sub: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/*/*
   LambdaIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
-      ApiId: !Ref ApiGateway
+      ApiId:
+        Ref: ApiGateway
       IntegrationType: AWS_PROXY
       IntegrationMethod: POST
-      IntegrationUri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiDataFetcherLambda.Arn}/invocations'
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiDataFetcherLambda.Arn}/invocations
       PayloadFormatVersion: '2.0'
-
-  # Routes
   FetchNewRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
-      ApiId: !Ref ApiGateway
-      RouteKey: 'POST /fetch-new'
-      Target: !Sub 'integrations/${LambdaIntegration}'
-
+      ApiId:
+        Ref: ApiGateway
+      RouteKey: POST /fetch-new
+      Target:
+        Fn::Sub: integrations/${LambdaIntegration}
   GetDataRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
-      ApiId: !Ref ApiGateway
-      RouteKey: 'GET /data'
-      Target: !Sub 'integrations/${LambdaIntegration}'
-
-  ScoreRoutesRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref ApiGateway
-      RouteKey: 'POST /score-routes'
-      Target: !Sub 'integrations/${LambdaIntegration}'
-
-  # API Gateway Stage
+      ApiId:
+        Ref: ApiGateway
+      RouteKey: GET /data
+      Target:
+        Fn::Sub: integrations/${LambdaIntegration}
   ApiStage:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
-      ApiId: !Ref ApiGateway
+      ApiId:
+        Ref: ApiGateway
       StageName: prod
       AutoDeploy: true
-
-  # CloudWatch Event Rule for periodic fetching (optional)
   ScheduledFetchRule:
     Type: AWS::Events::Rule
     Properties:
       Name: ApiDataFetcherSchedule
-      Description: 'Trigger Lambda to fetch new API data every hour'
-      ScheduleExpression: 'rate(1 hour)'
+      Description: Trigger Lambda to fetch new API data every hour
+      ScheduleExpression: rate(1 hour)
       State: ENABLED
       Targets:
-        - Arn: !GetAtt ApiDataFetcherLambda.Arn
-          Id: '1'
-          Input: '{"httpMethod": "POST", "path": "/fetch-new"}'
-
+      - Arn:
+          Fn::GetAtt: ApiDataFetcherLambda.Arn
+        Id: '1'
+        Input: '{"httpMethod": "POST", "path": "/fetch-new"}'
+  ScheduledFetchLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: ApiDataFetcherLambda
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt: ScheduledFetchRule.Arn
+  ScoreRoutesRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId:
+        Ref: ApiGateway
+      RouteKey: POST /score-routes
+      Target:
+        Fn::Sub: integrations/${LambdaIntegration}
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
   SafetyDataRefreshRule:
     Type: AWS::Events::Rule
     Properties:
       Name: SafePathSafetyDataRefresh
-      Description: Refresh shared incident snapshots every five minutes
-      ScheduleExpression: 'rate(5 minutes)'
+      Description: Refresh SafePath incident snapshots every five minutes
+      ScheduleExpression: rate(5 minutes)
       State: ENABLED
+      EventBusName: default
       Targets:
-        - Arn: !GetAtt ApiDataFetcherLambda.Arn
-          Id: SafetySnapshotRefresh
-          Input: '{"action":"refresh-safety-data"}'
-
+      - Id: SafetySnapshotRefresh
+        Arn:
+          Fn::GetAtt:
+          - ApiDataFetcherLambda
+          - Arn
+        Input: '{"action": "refresh-safety-data"}'
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
   SafetyDataRefreshPermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Ref ApiDataFetcherLambda
+      FunctionName:
+        Ref: ApiDataFetcherLambda
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
-      SourceArn: !GetAtt SafetyDataRefreshRule.Arn
-
-  # Permission for CloudWatch Events to invoke Lambda
-  ScheduledFetchLambdaPermission:
-    Type: AWS::Lambda::Permission
+      SourceArn:
+        Fn::GetAtt:
+        - SafetyDataRefreshRule
+        - Arn
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+  CrimeDataBackupBucket:
+    Type: AWS::S3::Bucket
     Properties:
-      FunctionName: !Ref ApiDataFetcherLambda
-      Action: lambda:InvokeFunction
-      Principal: events.amazonaws.com
-      SourceArn: !GetAtt ScheduledFetchRule.Arn
-
+      BucketName:
+        Fn::Sub: safepath-crime-data-${AWS::AccountId}
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
 Outputs:
   ApiEndpoint:
-    Description: 'API Gateway endpoint URL'
-    Value: !Sub 'https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod'
+    Description: API Gateway endpoint URL
+    Value:
+      Fn::Sub: https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod
   DynamoDBTableName:
-    Description: 'Name of the DynamoDB table'
-    Value: !Ref ApiDataCacheTable
-  S3BucketName:
-    Description: 'Name of the S3 backup bucket'
-    Value: !Ref CrimeDataBackupBucket
+    Description: Name of the DynamoDB table
+    Value:
+      Ref: ApiDataCacheTable
   LambdaFunctionArn:
-    Description: 'ARN of the Lambda function'
-    Value: !GetAtt ApiDataFetcherLambda.Arn
+    Description: ARN of the Lambda function
+    Value:
+      Fn::GetAtt: ApiDataFetcherLambda.Arn

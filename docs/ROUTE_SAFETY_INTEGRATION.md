@@ -45,7 +45,7 @@ The source changes do not update an already deployed AWS API or Vercel build.
    `backend/lambda-routing.zip` (requires Python/pip and package registry access).
 2. Upload the ZIP to an existing S3 deployment bucket in the Lambda region.
 3. Deploy/update `infrastructure/cloudformation-template.yaml`, supplying its
-   existing parameters plus `LambdaDeploymentBucket` and `LambdaDeploymentKey`.
+   existing parameters plus `LambdaDeploymentBucket`, `LambdaDeploymentKey`, and `LambdaDeploymentCodeSha256`.
    The template now uses actual packaged code and adds `POST /score-routes` to
    the existing Lambda integration. Use a new S3 key for each code revision.
    For manually managed infrastructure, update the `ApiDataFetcher` Lambda ZIP
@@ -72,17 +72,23 @@ stripping; they stub network access and exercise the production service code.
 The Python suite stubs AWS and DataSF, covering segment distance, age/timezone
 handling, route ordering, pagination, validation, and source failures.
 
-## Updating an existing manually managed backend
+## Deployment ownership and rollback
 
-`python3 scripts/deploy_aws_backend.py --account ACCOUNT --api-id API_ID
---lambda-zip /absolute/path/lambda-routing.zip --backup-dir /absolute/path/backup`
-prints a deployment preview. Add `--apply` to publish after reviewing it. The
-script saves the previous Lambda ZIP and configuration, warms the incident
-snapshot, adds the scoring route to the existing integration, and connects the
-five-minute EventBridge refresh. It preserves the hotspot endpoint and legacy
-hourly fetching. A failed warm-up restores the previous Lambda code.
+Use the CloudFormation-managed deployment procedure in
+[Deployment reliability and dataset exports](DEPLOYMENT_AND_DATASETS.md).
+The deployment script refuses unmanaged resources or Lambda code drift. Each
+applied deployment creates a unique private backup directory, submits a guarded
+stack update, warms the snapshot, and verifies the deployed code checksum. A
+post-update failure restores the previous stack template and code parameters.
+Rollback failures are reported with retained artifacts.
 
-Scoring responses now include `dataFetchedAt` and `dataMode` separately from
+The scoring route, refresh schedule, refresh permission, and S3 bucket have been
+imported into the existing stack. The Lambda code baseline points to a verified
+copy of the working package in S3 rather than placeholder inline code. Fresh
+stack deployments also require `LambdaDeploymentCodeSha256` alongside the
+package bucket and key; `DataSfToken` remains optional.
+
+Scoring responses include `dataFetchedAt` and `dataMode` separately from
 `assessedAt`. CloudWatch receives structured `routes_scored` and
 `safety_snapshot_refreshed` events. Snapshot metadata is not returned as an
 incident by the legacy `/data` endpoint; expired legacy records are explicitly
