@@ -2,22 +2,6 @@
 
 SafePath helps pedestrians find the safest walking routes in San Francisco by analyzing real-time crime data, infrastructure hazards, and temporal patterns to recommend routes that prioritize personal safety.
 
-## Current route safety integration
-
-Walking alternatives are scored on demand through `POST /score-routes` using
-DataSF police calls (past 72 hours) and open 311 encampment/aggressive reports.
-AWS Lambda refreshes shared S3 incident snapshots every five minutes and uses
-DynamoDB freshness metadata; expired snapshots are refreshed on demand. The app
-ranks actual distinct paths by measured incident risk, identifies the fastest
-candidate by travel time, and shows an incident safety index. Safety data failures
-produce an error; no mock ratings or fabricated route alternatives are used.
-
-This is an index of reported incidents, not a probability or guarantee of safety.
-Other analysis modules described below (logistic models, comprehensive analyzer,
-lighting/social factors, and hotspot UI) remain separate from this route flow.
-See [integration and deployment instructions](docs/ROUTE_SAFETY_INTEGRATION.md).
-Existing AWS and frontend deployments must be updated to enable the new endpoint.
-
 ## Problem Statement
 
 Traditional navigation apps optimize for speed and distance but ignore critical safety factors:
