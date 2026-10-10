@@ -160,20 +160,37 @@ npm run build
 
 ### AWS Backend Deployment
 
-The backend's route, refresh schedule, permission, bucket, and Lambda code are
-managed by CloudFormation. Applied deployments preserve unique rollback artifacts
-and restore the previous stack state if post-update verification fails.
+1. **Create S3 bucket for Lambda deployment and data backups**
+   ```bash
+   export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+   aws s3 mb s3://safepath-crime-data-${AWS_ACCOUNT_ID} --region us-east-1
+   aws s3api put-bucket-versioning --bucket safepath-crime-data-${AWS_ACCOUNT_ID} --versioning-configuration Status=Enabled
+   ```
 
-```bash
-bash scripts/package_routing_backend.sh /private/tmp/lambda-routing.zip
-python3 scripts/deploy_aws_backend.py --account YOUR_ACCOUNT --api-id YOUR_API \
-  --lambda-zip /private/tmp/lambda-routing.zip \
-  --backup-dir /private/tmp/safepath-deployment-backups
-```
+2. **Deploy infrastructure (DynamoDB, Lambda, API Gateway)**
+   ```bash
+   # Note: S3 bucket must exist first (created manually in step 1)
+   # Then manually deploy Lambda, DynamoDB, and API Gateway
+   # CloudFormation stack deployment available in infrastructure/cloudformation-template.yaml
+   ```
 
-This previews the release; add `--apply` to publish it. See
-[deployment and dataset instructions](docs/DEPLOYMENT_AND_DATASETS.md) for initial
-resource reconciliation, rollback behavior, and feature-preserving dataset exports.
+3. **Package and deploy Lambda function**
+   ```bash
+   cd lambda-package
+   zip -r ../lambda-deployment.zip .
+   aws s3 cp ../lambda-deployment.zip s3://safepath-crime-data-${AWS_ACCOUNT_ID}/
+   aws lambda update-function-code \
+     --function-name ApiDataFetcher \
+     --s3-bucket safepath-crime-data-${AWS_ACCOUNT_ID} \
+     --s3-key lambda-deployment.zip
+   ```
+
+4. **Update Lambda environment variables**
+   ```bash
+   aws lambda update-function-configuration \
+     --function-name ApiDataFetcher \
+     --environment "Variables={S3_BUCKET_NAME=safepath-crime-data-${AWS_ACCOUNT_ID},DYNAMODB_TABLE_NAME=ApiDataCache,API_ENDPOINT=https://data.sfgov.org/resource/wg3w-h783.json}"
+   ```
 
 ## 🧮 Safety Scoring Algorithm
 
