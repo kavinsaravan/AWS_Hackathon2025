@@ -3,11 +3,13 @@
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, Navigation, Shield, ChevronRight, Loader2, AlertCircle } from "lucide-react"
+import { MapPin, Navigation, Shield, ChevronRight, Settings, Loader2, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import RouteMap from "@/components/route-map"
 import LocationInput from "@/components/location-input"
 import CrimeAnalytics from "@/components/crime-analytics"
+import { Input } from "@/components/ui/input"
+import { parseTableauView } from "@/services/tableau"
 import { calculateRoutes, isGraphHopperConfigured } from "@/services/graphhopper"
 import { saveLocation } from "@/services/savedLocations"
 
@@ -38,6 +40,21 @@ export default function SafePathApp() {
   const [error, setError] = useState<string | null>(null)
 
   const [journey, setJourney] = useState<{ origin: string; destination: string } | null>(null)
+  const [showDashboardSettings, setShowDashboardSettings] = useState(false)
+  const [tableauUrl, setTableauUrl] = useState(() => {
+    try { return localStorage.getItem("safepath_tableau_view") || process.env.REACT_APP_TABLEAU_VIEW_URL || "" }
+    catch { return process.env.REACT_APP_TABLEAU_VIEW_URL || "" }
+  })
+  const [tableauDraft, setTableauDraft] = useState("")
+  const [tableauError, setTableauError] = useState("")
+  const connectTableau = () => {
+    try {
+      const value = tableauDraft.trim() ? parseTableauView(tableauDraft) : ""
+      localStorage.setItem("safepath_tableau_view", value)
+      setTableauUrl(value); setTableauError(""); setShowDashboardSettings(false)
+    } catch (error) { setTableauError(error instanceof Error ? error.message : "Could not save the dashboard") }
+  }
+
   const handleCalculateRoute = async () => {
     if (!origin || !destination) return
 
@@ -92,11 +109,23 @@ export default function SafePathApp() {
                 <p className="text-xs text-muted-foreground font-medium">San Francisco, CA</p>
               </div>
             </div>
+            <Button variant="ghost" size="icon" aria-label="Dashboard settings" onClick={() => { setTableauDraft(tableauUrl); setTableauError(""); setShowDashboardSettings(v => !v) }}>
+              <Settings className="h-5 w-5 text-foreground/70" />
+            </Button>
           </div>
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-6">
+        {showDashboardSettings && <Card className="p-5 mb-6 space-y-3">
+          <h2 className="font-semibold">Tableau dashboard settings</h2>
+          <p className="text-sm text-muted-foreground">Connect a published Tableau Public dashboard in this browser. Leaving the link empty keeps the built-in crime analytics available.</p>
+          <label htmlFor="tableau-url" className="block text-sm font-medium">Published dashboard URL</label>
+          <Input id="tableau-url" value={tableauDraft} onChange={e => setTableauDraft(e.target.value)} placeholder="https://public.tableau.com/views/YourWorkbook/YourDashboard" />
+          {tableauError && <p role="alert" className="text-sm text-destructive">{tableauError}</p>}
+          <Button onClick={connectTableau}>Save dashboard connection</Button>
+          <a href={`${process.env.PUBLIC_URL || ""}/tableau/sf-crime-incidents.csv`} download className="block text-sm text-primary">Download crime data for Tableau</a>
+        </Card>}
         {/* Top Section - Route Input/Options and Map */}
         <div className="grid gap-6 lg:grid-cols-3 mb-6">
           {/* Left Column - Route Input & Options */}
@@ -222,7 +251,7 @@ export default function SafePathApp() {
         </div>
 
         {routeCalculated && selectedRoute && (
-          <CrimeAnalytics route={selectedRoute} />
+          <CrimeAnalytics route={selectedRoute} tableauUrl={tableauUrl} />
         )}
       </div>
     </div>

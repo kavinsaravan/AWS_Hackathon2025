@@ -1,0 +1,14 @@
+{
+  "refreshed_at_utc": "2026-10-10T06:33:15.552973+00:00",
+  "rows": 21460,
+  "window_days": 90,
+  "timezone": "America/Los_Angeles",
+  "source": "https://data.sfgov.org/resource/wg3w-h783.json",
+  "scope": "Police incident records with usable SF coordinates; excludes missing/outside coordinates",
+  "count_measure": "SUM(RecordCount) counts source report rows; COUNTD(ExternalId) counts unique incident IDs",
+  "area_filter_fields": [
+    "Latitude",
+    "Longitude"
+  ],
+  "refresh": "Snapshot only. Regenerate and republish the Tableau extract after refreshing analytics exports."
+}

@@ -4,9 +4,10 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGri
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { routeArea, summarizeCrimeArea, type CrimeSnapshot } from "@/services/crimeAnalytics"
+import TableauDashboard from "./tableau-dashboard"
 import type { Route } from "./safe-path-app"
 
-export default function CrimeAnalytics({ route }: { route: Route }) {
+export default function CrimeAnalytics({ route, tableauUrl }: { route: Route; tableauUrl: string }) {
   const [snapshot, setSnapshot] = useState<CrimeSnapshot | null>(null)
   const [error, setError] = useState(false)
   const [citywide, setCitywide] = useState(false)
@@ -57,7 +58,7 @@ export default function CrimeAnalytics({ route }: { route: Route }) {
           </div>}
         <p className="text-xs text-muted-foreground mt-5">{snapshot ? `Historical snapshot updated ${new Date(snapshot.refreshedUTC).toLocaleString()}. ` : ""}Includes records with usable SF coordinates. Area boundaries are approximate. Recent days may be incomplete due to reporting delays. Reported records and the route's incident index describe different measures; neither guarantees personal safety.</p>
       </Card>
-
+      <TableauDashboard viewUrl={tableauUrl} bounds={bounds} />
     </section>
   )
 }
