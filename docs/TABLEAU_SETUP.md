@@ -1,73 +1,58 @@
 # SafePath Tableau Public dashboard
 
-The React app now supports Tableau Public's Embedding API v3. It keeps the existing
-crime charts and shows an actual Tableau visualization beneath them only after a
-published view URL is configured. A Tableau account alone does not create a dashboard.
-No dashboard has been published or rendered in the user's account yet.
+The published report is [SafePathSF / CrimeDashboard](https://public.tableau.com/views/SafePathSF/CrimeDashboard).
+It contains three native Tableau worksheets: Crime Map, Crime Categories, and
+Reports Over Time. It uses the 21,460 mapped police records in the existing 90-day
+DataSF snapshot. The app keeps its original crime charts and embeds this report
+below them after a successful route calculation.
 
-## Build the dashboard in your Mac browser
+## Connection and area filtering
 
-1. Download [sf-crime-incidents.csv](https://aws-hackathon2025.vercel.app/tableau/sf-crime-incidents.csv).
-   This contains 21,460 mapped police report rows from the existing 90-day snapshot.
-   The refresh timestamp is included in every row and in `public/tableau/manifest.json`.
-   This is public DataSF data, without user-entered addresses or saved routes.
-2. Sign in to [Tableau Public](https://public.tableau.com/), choose **Create → Web Authoring**,
-   and upload the CSV as a text file. Create an extract if prompted.
-3. Check the data types: `Latitude` and `Longitude` are decimal numbers, `EventDate`
-   is a date, `LocalTimestamp` is a date/time, `RecordCount` is a whole number, and
-   `RecordKey` / `ExternalId` are strings. Treat `SnapshotUTC` as text for its label.
-   Keep the coordinate field captions exactly **Latitude** and **Longitude**.
-4. Build these worksheets, all from the same data source:
-   - **Crime map:** set Latitude/Longitude geographic roles to Latitude/Longitude;
-     use them on Rows/Columns, put RecordKey on Detail and Category on Color.
-     Keep aggregation only where it preserves individual record locations.
-   - **Crime categories:** Category on Rows, SUM(RecordCount) on Columns, descending
-     sort, horizontal bars in purple.
-   - **Reports over time:** EventDate as continuous day on Columns and
-     SUM(RecordCount) on Rows, with a teal line.
-   - **Reports by neighborhood:** Neighborhood on Rows, SUM(RecordCount) on Columns.
-   - **Mapped records:** SUM(RecordCount) on Text.
-   - **Unique incidents:** COUNTD(ExternalId) on Text. One incident can have multiple
-     category/report rows, so this differs from the mapped-record count.
-5. Configure numeric **range-of-values** filters for raw Latitude and Longitude
-   (not generated Latitude/Longitude fields or SUM/AVG coordinate measures). If
-   necessary, convert each raw coordinate to a continuous dimension,
-   keeping its caption Latitude/Longitude. Apply both filters to **all worksheets
-   using this data source**. Initially include the full numeric range.
-   Do not substitute a neighborhood filter for coordinates: the app passes route
-   bounding-box ranges to these exact fields, including worksheets without a map.
-6. Create a dashboard named **CrimeDashboard**, with the two KPI sheets at the top,
-   map and categories in the middle, and time/neighborhood charts beneath. Set its
-   sizing to Automatic or an appropriate responsive range. Add Category, Neighborhood,
-   and EventDate controls, applying them to all related worksheets. Add a caption
-   stating this is a historical snapshot, with reporting delays and approximate areas.
-7. Publish as **SafePathSF**. Copy the view's Share link. It should look like
-   `https://public.tableau.com/views/SafePathSF/CrimeDashboard` or
-   `https://public.tableau.com/app/profile/YOUR_PROFILE/viz/SafePathSF/CrimeDashboard`.
-   A profile link or web-editor link will not work.
+The production view URL is configured in `.env.production` and `vercel.json` as
+`REACT_APP_TABLEAU_VIEW_URL`. This makes the report available to all visitors without
+Microsoft or Tableau account sign-in. Dashboard settings can override the URL for
+one browser; clear its saved link and reload the page to use the configured production report again.
+Only Tableau Public view/share URLs are accepted, not authoring or profile URLs.
 
-This guide specifies the workbook to create; it is not evidence that a native
-Tableau workbook has already been built or validated. Browser control currently
-cannot access the signed-in account. The final published workbook still needs
-live verification for its numeric filters and responsive layout.
+Tableau's Embedding API v3 is loaded from the same public.tableau.com instance that
+hosts the report. All three worksheets have range filters on the raw coordinate
+fields named exactly **Latitude** and **Longitude**, applied to all worksheets using
+the data source. When a route or alternative is selected, the app passes its padded
+bounding box to each worksheet. **All SF** clears those ranges. Other report filters
+remain available. Updates are serialized so a rapid route change cannot leave an
+older route's bounds applied last. The view is hidden while updates run or if they
+fail, avoiding a citywide report mislabeled as the selected route area.
 
-## Connect and verify
+This is a rectangular area around the route, not a precise street corridor. The
+built-in summary selects intersecting grid cells, while Tableau filters individual
+coordinates, so their approximate-area record counts may differ. AWS calculates
+route safety scores from recent dispatch/311 reports separately; those scores are
+not measures from this historical Tableau dataset.
 
-- For a local preview, open the gear button **Dashboard settings** in SafePath,
-  paste the published dashboard URL, and save. This stores the view URL in that
-  browser only. The dashboard appears after a successful route calculation.
-- For all visitors, set `REACT_APP_TABLEAU_VIEW_URL` to that published URL at build
-  time, rebuild, and redeploy. Do not store passwords, cookies, or access tokens.
-- Test two different SF journeys, switch route alternatives, and use **All SF** /
-  **Route area**. All dashboard sheets must respond to coordinate changes. The
-  app hides the view while filters are updating or if they fail, so an unfiltered
-  citywide view is not mislabeled as the selected route area.
-- Tableau Public views require no visitor sign-in. The link **Open SF overview in
-  Tableau** deliberately opens the published overview without the app's route filters.
-- Route safety scores still come from AWS and are displayed in the app. They are
-  not measures from Tableau's historical incident dataset.
+## Verified behavior
 
-## Refresh
+The actual published report was checked through Tableau's documented API inside
+the app, rather than only against a mocked embed. Desktop checks confirmed that
+all three sheets share the selected coordinate ranges and report consistent counts:
+
+- Golden Gate Park → Ferry Building: 12,550 report records in the selected area.
+- Union Square → Ferry Building: 1,737 report records in the selected area.
+- All SF: 21,460 report records, with route-area restoration and alternative-route
+  switching also checked.
+
+These counts describe the current snapshot and route geometry, not safety
+probabilities. They can change after updating data or routing-provider results.
+The browser checks also retain the app's two original charts. The real Phone
+layout was verified at a 390-pixel viewport, with three filtered sheets and no
+horizontal page overflow.
+
+## Data and refresh
+
+Download the [Tableau CSV](https://aws-hackathon2025.vercel.app/tableau/sf-crime-incidents.csv).
+`public/tableau/manifest.json` records the source and refresh timestamp. The CSV
+contains public DataSF police records without user-entered addresses or saved routes.
+`SUM(Record Count)` counts report rows; `COUNTD(External Id)` would count distinct
+incident IDs, which can appear in more than one category/report row.
 
 ```sh
 python3 scripts/export_analytics_data.py
@@ -76,9 +61,23 @@ python3 scripts/export_tableau_data.py
 npm run build
 ```
 
-Deploy the updated public data, then update and republish the Tableau data extract.
-CSV uploads do not automatically refresh in Tableau Public. Area changes filter
-that extract and do not update the source snapshot.
+Deploy the updated public exports, then update and republish the Tableau extract
+through Tableau Public's web editor. CSV uploads do not automatically refresh there.
+Selecting a route changes filters on the published snapshot and does not fetch new
+police records. Keep the snapshot timestamp and reporting-delay context visible.
+
+## Editing and publishing
+
+Use Tableau Public web authoring to update the workbook. Its layout has the map
+and category chart across the top and daily timeline underneath, with Automatic
+sizing and a Phone device layout. Record Key must be a **dimension on Detail** for
+the map, producing one mark per mapped record rather than category-average locations.
+Use AVG(Longitude) on Columns and AVG(Latitude) on Rows, with Category on Color.
+Keep coordinate field captions and filter ranges intact when editing the workbook.
+
+Publish over **SafePathSF**, retain the dashboard name **CrimeDashboard**, and check
+both the default and phone layouts. If either workbook or dashboard name changes,
+update the production URL, rebuild, redeploy, and repeat route-filter checks.
 
 ## Checks
 
@@ -87,9 +86,9 @@ node --test scripts/test_tableau_services.cjs scripts/test_analytics_services.cj
 python3 -m unittest discover -s scripts/tests -q
 ```
 
-The tests verify URL parsing, worksheet filters, citywide clearing, rapid route
-changes, failure handling, and export scope. They do not validate a user's published
-workbook. The main repository README has intentionally not been changed.
+The unit tests cover URL parsing, worksheet filters, citywide clearing, rapid route
+changes, failure handling, and export scope. Live browser checks are also needed
+after changing the published workbook. The main repository README is unchanged.
 
 Sources: [web authoring](https://help.tableau.com/current/pro/desktop/en-us/getstarted_web_authoring.htm),
 [API loading](https://help.tableau.com/current/api/embedding_api/en-us/docs/embedding_api_get.html),
