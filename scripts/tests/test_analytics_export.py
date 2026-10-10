@@ -3,11 +3,10 @@ from datetime import datetime,timezone
 from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from export_powerbi_data import normalize_records,export,severity
-from validate_powerbi_project import validate
+from export_analytics_data import normalize_records,export,severity
 
 NOW=datetime(2026,10,10,2,tzinfo=timezone.utc)
-class PowerBIExportTests(unittest.TestCase):
+class AnalyticsExportTests(unittest.TestCase):
     def test_dedup_and_missing_locations_are_retained_for_quality(self):
         rows=[{'row_id':'one','incident_id':'x','incident_datetime':'2026-10-09T10:00:00','incident_category':'Assault','latitude':'37.77','longitude':'-122.42'},
               {'row_id':'two','incident_id':'y','incident_datetime':'bad','incident_category':'Theft'}]
@@ -33,10 +32,5 @@ class PowerBIExportTests(unittest.TestCase):
             self.assertEqual(rows[0]['Source'],'Police incidents')
             self.assertEqual(result['risk_location_rows'],10)
             self.assertTrue((Path(folder)/'source_quality.csv').is_file())
-
-    def test_native_report_schemas_bindings_and_layouts(self):
-        root=Path(__file__).resolve().parents[2]/'powerbi'
-        with patch('builtins.print'):result=validate(root)
-        self.assertEqual(result['pages'],4);self.assertEqual(result['measures'],20)
 
 if __name__=='__main__':unittest.main()

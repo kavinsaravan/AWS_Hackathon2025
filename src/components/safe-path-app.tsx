@@ -3,13 +3,11 @@
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, Navigation, Shield, ChevronRight, Settings, Loader2, AlertCircle } from "lucide-react"
+import { MapPin, Navigation, Shield, ChevronRight, Loader2, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import RouteMap from "@/components/route-map"
 import LocationInput from "@/components/location-input"
 import CrimeAnalytics from "@/components/crime-analytics"
-import { Input } from "@/components/ui/input"
-import { parsePowerBIReport } from "@/services/powerBI"
 import { calculateRoutes, isGraphHopperConfigured } from "@/services/graphhopper"
 import { saveLocation } from "@/services/savedLocations"
 
@@ -40,23 +38,6 @@ export default function SafePathApp() {
   const [error, setError] = useState<string | null>(null)
 
   const [journey, setJourney] = useState<{ origin: string; destination: string } | null>(null)
-  const [showSettings, setShowSettings] = useState(false)
-  const [reportUrl, setReportUrl] = useState(() => {
-    try { return localStorage.getItem("safepath_powerbi_report") || process.env.REACT_APP_POWER_BI_EMBED_URL || "" }
-    catch { return process.env.REACT_APP_POWER_BI_EMBED_URL || "" }
-  })
-  const [reportDraft, setReportDraft] = useState(reportUrl)
-  const [reportError, setReportError] = useState("")
-  const connectReport = () => {
-    try {
-      const value = reportDraft.trim() ? parsePowerBIReport(reportDraft).url : ""
-      setReportUrl(value)
-      localStorage.setItem("safepath_powerbi_report", value)
-      setReportError("")
-      setShowSettings(false)
-    } catch (error) { setReportError(error instanceof Error ? error.message : "Could not connect the report") }
-  }
-
   const handleCalculateRoute = async () => {
     if (!origin || !destination) return
 
@@ -111,24 +92,11 @@ export default function SafePathApp() {
                 <p className="text-xs text-muted-foreground font-medium">San Francisco, CA</p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" className="hover:bg-primary/10" aria-label="Analytics settings" onClick={() => { setReportDraft(reportUrl); setShowSettings(!showSettings) }}>
-              <Settings className="h-5 w-5 text-foreground/70" />
-            </Button>
           </div>
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-6">
-        {showSettings && (
-          <Card className="p-5 mb-6 space-y-3">
-            <h2 className="font-semibold">Connect your Power BI report</h2>
-            <p className="text-sm text-muted-foreground">Paste the published report link or Website or portal embed URL. Leaving this empty keeps the area summary available.</p>
-            <label htmlFor="powerbi-url" className="text-sm font-medium">Report URL</label>
-            <Input id="powerbi-url" value={reportDraft} onChange={e => setReportDraft(e.target.value)} placeholder="https://app.powerbi.com/reportEmbed?reportId=…" />
-            {reportError && <p role="alert" className="text-sm text-destructive">{reportError}</p>}
-            <Button onClick={connectReport}>Save report connection</Button>
-          </Card>
-        )}
         {/* Top Section - Route Input/Options and Map */}
         <div className="grid gap-6 lg:grid-cols-3 mb-6">
           {/* Left Column - Route Input & Options */}
@@ -254,7 +222,7 @@ export default function SafePathApp() {
         </div>
 
         {routeCalculated && selectedRoute && (
-          <CrimeAnalytics route={selectedRoute} reportUrl={reportUrl} onConnect={() => { setReportDraft(reportUrl); setShowSettings(true); window.scrollTo({ top: 0, behavior: "smooth" }) }} />
+          <CrimeAnalytics route={selectedRoute} />
         )}
       </div>
     </div>

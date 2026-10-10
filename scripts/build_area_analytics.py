@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Aggregate the Power BI police-incident export for the app's area summary."""
+"""Aggregate the police-incident export for the app's area summary."""
 import argparse
 import csv
 import json
@@ -32,6 +32,6 @@ def build(data_dir, output):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--data-dir',type=Path,default=Path(__file__).resolve().parents[1]/'powerbi/data')
+    parser.add_argument('--data-dir',type=Path,default=Path(__file__).resolve().parents[1]/'public/analytics-data')
     parser.add_argument('--output',type=Path,default=Path(__file__).resolve().parents[1]/'public/safety-analytics.json')
     args=parser.parse_args();build(args.data_dir,args.output)

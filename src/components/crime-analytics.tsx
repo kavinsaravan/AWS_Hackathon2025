@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from "react"
-import { BarChart3, ExternalLink, Loader2 } from "lucide-react"
+import { BarChart3, Loader2 } from "lucide-react"
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line } from "recharts"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { parsePowerBIReport, powerBIEmbedUrl, routeArea } from "@/services/powerBI"
-import { summarizeCrimeArea, type CrimeSnapshot } from "@/services/crimeAnalytics"
+import { routeArea, summarizeCrimeArea, type CrimeSnapshot } from "@/services/crimeAnalytics"
 import type { Route } from "./safe-path-app"
 
-export default function CrimeAnalytics({ route, reportUrl, onConnect }: { route: Route; reportUrl: string; onConnect: () => void }) {
+export default function CrimeAnalytics({ route }: { route: Route }) {
   const [snapshot, setSnapshot] = useState<CrimeSnapshot | null>(null)
   const [error, setError] = useState(false)
   const [citywide, setCitywide] = useState(false)
@@ -23,11 +22,9 @@ export default function CrimeAnalytics({ route, reportUrl, onConnect }: { route:
   }, [])
   const bounds = useMemo(() => citywide ? undefined : routeArea(route.coordinates), [citywide, route.coordinates])
   const summary = useMemo(() => snapshot ? summarizeCrimeArea(snapshot, bounds) : null, [snapshot, bounds])
-  const report = useMemo(() => { try { return reportUrl ? parsePowerBIReport(reportUrl) : null } catch { return null } }, [reportUrl])
-  const embedUrl = report ? powerBIEmbedUrl(report, bounds) : ""
 
   return (
-    <section className="space-y-6" aria-label="Crime analytics and Power BI">
+    <section className="space-y-6" aria-label="Crime analytics">
       <Card className="p-5 md:p-7 shadow-lg bg-white/90">
         <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
           <div>
@@ -61,20 +58,6 @@ export default function CrimeAnalytics({ route, reportUrl, onConnect }: { route:
         <p className="text-xs text-muted-foreground mt-5">{snapshot ? `Historical snapshot updated ${new Date(snapshot.refreshedUTC).toLocaleString()}. ` : ""}Includes records with usable SF coordinates. Area boundaries are approximate. Recent days may be incomplete due to reporting delays. Reported records and the route's incident index describe different measures; neither guarantees personal safety.</p>
       </Card>
 
-      <Card className="p-5 md:p-7 shadow-lg bg-white/90">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div><h2 className="text-xl font-display font-bold">Power BI report</h2><p className="text-sm text-muted-foreground mt-1">Explore the interactive crime analysis report.</p></div>
-          {report && <a href={embedUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-primary">Open report<ExternalLink className="h-4 w-4" /></a>}
-        </div>
-        {report ? <>
-          <iframe key={embedUrl} src={embedUrl} title="Power BI crime analytics report" className="w-full h-[560px] md:h-[740px] rounded-xl border" allowFullScreen />
-          <p className="text-xs text-muted-foreground mt-3">{report.mode === "secure" ? (bounds ? "Power BI may ask you to sign in. The report is filtered to the selected route area." : "Power BI may ask you to sign in. The report shows the SF overview.") : "This public report uses its saved filters. Use its controls to choose an area."}</p>
-        </> : <div className="rounded-xl border border-dashed bg-slate-50 p-8 text-center">
-          <p className="font-semibold">Power BI report isn’t connected yet</p>
-          <p className="text-sm text-muted-foreground mt-2 mb-4">The area summary is available above. Connect a published report when your Power BI workspace is ready.</p>
-          <Button variant="outline" onClick={onConnect}>Connect Power BI report</Button>
-        </div>}
-      </Card>
     </section>
   )
 }

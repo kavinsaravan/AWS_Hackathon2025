@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Curated, refreshable public DataSF exports for the native SafePath Power BI report."""
+"""Curated, refreshable public DataSF exports for SafePath crime analytics."""
 import argparse
 import csv
 import hashlib
 import json
-import shutil
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -101,7 +100,7 @@ def write_csv(path,fields,rows):
 def export(output, samples=1000, seed=42, now=None, sources=None):
     now=now or datetime.now(timezone.utc)
     sources=collect_sources(now) if sources is None else sources
-    # Collect and normalize every required source before writing any report data.
+    # Collect and normalize every required source before writing any analytics data.
     normalized={key:normalize_records(key,sources[key],now) for key in SOURCE_INFO}
     facts=[row for rows,_ in normalized.values() for row in rows]
     quality=[stats for _,stats in normalized.values()]
@@ -137,12 +136,7 @@ def export(output, samples=1000, seed=42, now=None, sources=None):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output-dir',type=Path,default=Path(__file__).resolve().parents[1]/'powerbi/data')
+    parser.add_argument('--output-dir',type=Path,default=Path(__file__).resolve().parents[1]/'public/analytics-data')
     parser.add_argument('--samples',type=int,default=1000)
     parser.add_argument('--seed',type=int,default=42)
-    parser.add_argument('--public-dir',type=Path,default=Path(__file__).resolve().parents[1]/'public/analytics-data')
     args=parser.parse_args();export(args.output_dir,args.samples,args.seed)
-    args.public_dir.mkdir(parents=True,exist_ok=True)
-    for source in list(args.output_dir.glob('*.csv'))+[args.output_dir/'manifest.json']:
-        shutil.copyfile(source,args.public_dir/source.name)
-    print('Hosted Power BI CSV exports prepared:',args.public_dir)

@@ -1,4 +1,4 @@
-import type { AnalyticsBounds } from "./powerBI"
+export interface AnalyticsBounds { north: number; south: number; east: number; west: number }
 export interface CrimeCell { south: number; north: number; west: number; east: number; count: number; categories: Array<[string, number]>; days: Array<[string, number]> }
 export interface CrimeSnapshot { version: number; refreshedUTC: string; windowDays: number; geocodedRecords: number; dates: string[]; cells: CrimeCell[] }
 
@@ -15,4 +15,14 @@ export function summarizeCrimeArea(snapshot: CrimeSnapshot, bounds?: AnalyticsBo
   return { count,
     categories: Array.from(categories).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name, count]) => ({ name, count })),
     days: snapshot.dates.map(date => ({ date, count: days.get(date) || 0 })) }
+}
+
+export function routeArea(coordinates: Array<{ lat: number; lng: number }>): AnalyticsBounds {
+  if (!coordinates.length) throw new Error("A route is required")
+  return {
+    north: Math.max(...coordinates.map(p => p.lat)) + .003,
+    south: Math.min(...coordinates.map(p => p.lat)) - .003,
+    east: Math.max(...coordinates.map(p => p.lng)) + .004,
+    west: Math.min(...coordinates.map(p => p.lng)) - .004,
+  }
 }
