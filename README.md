@@ -192,38 +192,6 @@ npm run build
      --environment "Variables={S3_BUCKET_NAME=safepath-crime-data-${AWS_ACCOUNT_ID},DYNAMODB_TABLE_NAME=ApiDataCache,API_ENDPOINT=https://data.sfgov.org/resource/wg3w-h783.json}"
    ```
 
-## 📁 Project Structure
-
-```
-AWS_Hackathon2025/
-├── backend/                 # AWS Lambda functions
-│   ├── lambda_fetch_api.py # API data fetcher
-│   ├── path_risk_analysis.py # Risk scoring engine
-│   └── requirements.txt    # Python dependencies
-│
-├── scripts/                 # Data processing
-│   ├── generate_*.py       # Dataset generation scripts
-│   └── analyze_sample_coverage.py
-│
-├── infrastructure/          # AWS CloudFormation
-│   └── cloudformation-template.yaml
-│
-├── docs/                    # Documentation
-│   ├── API_KEYS_AND_DATA_SOURCES.md
-│   ├── DATASF_IMPLEMENTATION.md
-│   └── ...
-│
-├── src/                     # React web frontend
-│   ├── components/         # React components & UI primitives
-│   ├── services/           # ML models & API services
-│   └── lib/                # Utility functions
-│
-├── public/                  # Static assets
-├── .gitignore              # Git exclusions
-├── package.json            # Node dependencies
-└── README.md               # This file
-```
-
 ## 🧮 Safety Scoring Algorithm
 
 The core risk calculation uses a physics-inspired formula:
