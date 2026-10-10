@@ -54,3 +54,7 @@ data/
 backend/lambda-hotspot-package/
 backend/*.zip
 *.zip
+
+# Local project documentation
+/Projects.MD
+/PROJECT.MD
