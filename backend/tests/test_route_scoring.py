@@ -48,6 +48,20 @@ class RiskTests(unittest.TestCase):
         closed = {**HAZARD, 'status_description': 'Closed'}
         self.assertEqual(risk.calculate_risk_score(PATH, [closed], '311', NOW), 0)
 
+    def test_index_matches_exact_distance_for_nearby_incidents(self):
+        import random
+        rng=random.Random(42)
+        path=[(37.77+i*.00001,-122.46+i*.0001) for i in range(500)]
+        index=risk.RouteSegmentIndex(path)
+        for _ in range(100):
+            point=(rng.uniform(37.765,37.78),rng.uniform(-122.465,-122.405))
+            exact=risk.min_distance_to_path(point,path)
+            result=index.distance(point)
+            if exact<1:
+                self.assertAlmostEqual(result,exact,places=10)
+            else:
+                self.assertTrue(math.isinf(result))
+
     def test_distance_attenuation(self):
         far = [(lat + 0.01, lng) for lat, lng in PATH]
         self.assertLess(risk.calculate_risk_score(far, [CRIME], 'crime', NOW), 0.001)

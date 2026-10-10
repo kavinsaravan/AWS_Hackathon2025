@@ -1,0 +1,4 @@
+Source,WindowDays,FetchedRows,ExportedRows,DuplicatesRemoved,MissingCoordinates,OutsideSF,MissingTime,UnknownNeighborhood,RefreshedUTC
+Police incidents,90,22322,22322,0,777,85,0,780,2026-10-10 06:33:15
+Police calls,3,3954,3954,0,1239,14,0,1241,2026-10-10 06:33:15
+Open 311 reports,30,11761,11761,0,115,30,0,118,2026-10-10 06:33:15

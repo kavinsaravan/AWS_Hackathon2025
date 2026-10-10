@@ -1,0 +1,837 @@
+{
+  "name": "SafePathSF",
+  "compatibilityLevel": 1600,
+  "model": {
+    "culture": "en-US",
+    "defaultPowerBIDataSourceVersion": "powerBI_V3",
+    "discourageImplicitMeasures": true,
+    "annotations": [
+      {
+        "name": "PBI_TimeIntelligenceEnabled",
+        "value": "0"
+      }
+    ],
+    "expressions": [
+      {
+        "name": "DataFolder",
+        "kind": "m",
+        "expression": "\"https://aws-hackathon2025.vercel.app/analytics-data/\" meta [IsParameterQuery=true, Type=\"Text\", IsParameterQueryRequired=true]"
+      }
+    ],
+    "tables": [
+      {
+        "name": "Incidents",
+        "lineageTag": "23843a36-3828-5f2c-922d-ff7c9a81a756",
+        "columns": [
+          {
+            "name": "RecordKey",
+            "dataType": "string",
+            "sourceColumn": "RecordKey",
+            "summarizeBy": "none",
+            "lineageTag": "1350bc49-30d2-5fff-b13f-a492d6261900",
+            "isHidden": false
+          },
+          {
+            "name": "ExternalId",
+            "dataType": "string",
+            "sourceColumn": "ExternalId",
+            "summarizeBy": "none",
+            "lineageTag": "e4a4bc22-1385-5d63-a3b7-b51ac51483a3",
+            "isHidden": false
+          },
+          {
+            "name": "Source",
+            "dataType": "string",
+            "sourceColumn": "Source",
+            "summarizeBy": "none",
+            "lineageTag": "b99a5240-9a98-518f-a98f-76691734b580",
+            "isHidden": false
+          },
+          {
+            "name": "Category",
+            "dataType": "string",
+            "sourceColumn": "Category",
+            "summarizeBy": "none",
+            "lineageTag": "78cdc292-bef3-589b-8cc8-4d4c55775a0c",
+            "isHidden": false
+          },
+          {
+            "name": "Neighborhood",
+            "dataType": "string",
+            "sourceColumn": "Neighborhood",
+            "summarizeBy": "none",
+            "lineageTag": "2db012fb-5156-58e7-8713-e64f2a1db63f",
+            "isHidden": false
+          },
+          {
+            "name": "District",
+            "dataType": "string",
+            "sourceColumn": "District",
+            "summarizeBy": "none",
+            "lineageTag": "e512e44b-fc60-5a39-ae05-d38857002fa4",
+            "isHidden": false
+          },
+          {
+            "name": "EventDate",
+            "dataType": "dateTime",
+            "sourceColumn": "EventDate",
+            "summarizeBy": "none",
+            "lineageTag": "23c0f3c9-fbf3-573f-9239-fffd9f8f8f46",
+            "isHidden": false,
+            "formatString": "yyyy-MM-dd"
+          },
+          {
+            "name": "LocalTimestamp",
+            "dataType": "dateTime",
+            "sourceColumn": "LocalTimestamp",
+            "summarizeBy": "none",
+            "lineageTag": "798ca3e7-2186-50ea-a4d4-6ef1d097933b",
+            "isHidden": false,
+            "formatString": "yyyy-MM-dd"
+          },
+          {
+            "name": "Hour",
+            "dataType": "int64",
+            "sourceColumn": "Hour",
+            "summarizeBy": "none",
+            "lineageTag": "684d8688-9db9-51bb-9a6c-6eb483d6d0b2",
+            "isHidden": false
+          },
+          {
+            "name": "Weekday",
+            "dataType": "string",
+            "sourceColumn": "Weekday",
+            "summarizeBy": "none",
+            "lineageTag": "aa570dbb-933c-5ce1-85bd-d06099eaf244",
+            "isHidden": false,
+            "sortByColumn": "WeekdayNumber"
+          },
+          {
+            "name": "WeekdayNumber",
+            "dataType": "int64",
+            "sourceColumn": "WeekdayNumber",
+            "summarizeBy": "none",
+            "lineageTag": "940c4ba8-904e-5d1c-ac0c-dcfb485bc2d9",
+            "isHidden": true
+          },
+          {
+            "name": "Latitude",
+            "dataType": "double",
+            "sourceColumn": "Latitude",
+            "summarizeBy": "none",
+            "lineageTag": "9f474def-59bf-50c6-b220-b659cd7ac0ee",
+            "isHidden": false,
+            "dataCategory": "Latitude"
+          },
+          {
+            "name": "Longitude",
+            "dataType": "double",
+            "sourceColumn": "Longitude",
+            "summarizeBy": "none",
+            "lineageTag": "ee3b8bab-a0dd-5ae6-afef-2c7c5ca952c0",
+            "isHidden": false,
+            "dataCategory": "Longitude"
+          },
+          {
+            "name": "IsGeocoded",
+            "dataType": "int64",
+            "sourceColumn": "IsGeocoded",
+            "summarizeBy": "none",
+            "lineageTag": "693e7214-f47a-5129-ac2a-6eb84768c310",
+            "isHidden": false
+          },
+          {
+            "name": "MissingTime",
+            "dataType": "int64",
+            "sourceColumn": "MissingTime",
+            "summarizeBy": "none",
+            "lineageTag": "732f4474-9ca7-5ceb-9df7-750817e66811",
+            "isHidden": false
+          },
+          {
+            "name": "Severity",
+            "dataType": "string",
+            "sourceColumn": "Severity",
+            "summarizeBy": "none",
+            "lineageTag": "7559ba12-cbf4-5b9c-bc25-39ab5549f6e8",
+            "isHidden": false
+          },
+          {
+            "name": "RuleWeight",
+            "dataType": "int64",
+            "sourceColumn": "RuleWeight",
+            "summarizeBy": "none",
+            "lineageTag": "7f17dca6-28f0-59f8-a43b-c6d59fb7924d",
+            "isHidden": false
+          },
+          {
+            "name": "Status",
+            "dataType": "string",
+            "sourceColumn": "Status",
+            "summarizeBy": "none",
+            "lineageTag": "328961a6-7bf5-5be8-9793-f1f418e0317b",
+            "isHidden": false
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Incidents",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Content = Web.Contents(DataFolder, [RelativePath=\"incidents.csv\"]),",
+                "    Source = Csv.Document(Content, [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    EmptyAsNull = Table.ReplaceValue(Headers, \"\", null, Replacer.ReplaceValue, Table.ColumnNames(Headers)),",
+                "    Typed = Table.TransformColumnTypes(EmptyAsNull, {{\"RecordKey\", type text}, {\"ExternalId\", type text}, {\"Source\", type text}, {\"Category\", type text}, {\"Neighborhood\", type text}, {\"District\", type text}, {\"EventDate\", type datetime}, {\"LocalTimestamp\", type datetime}, {\"Hour\", Int64.Type}, {\"Weekday\", type text}, {\"WeekdayNumber\", Int64.Type}, {\"Latitude\", type number}, {\"Longitude\", type number}, {\"IsGeocoded\", Int64.Type}, {\"MissingTime\", Int64.Type}, {\"Severity\", type text}, {\"RuleWeight\", Int64.Type}, {\"Status\", type text}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "Total Records",
+            "expression": "COUNTROWS(Incidents)",
+            "description": "All exported rows after deduplication; not unique cross-source events.",
+            "lineageTag": "6ea19f53-e316-5fc6-955a-a92e9393bb17",
+            "displayFolder": "Dashboard measures",
+            "formatString": "#,0"
+          },
+          {
+            "name": "Police Incident Records",
+            "expression": "CALCULATE([Total Records], KEEPFILTERS(Incidents[Source] = \"Police incidents\"))",
+            "description": "Police report rows; a single incident can contain multiple offense rows.",
+            "lineageTag": "d7a164a1-85b8-57e3-956a-17428ce72da0",
+            "displayFolder": "Dashboard measures",
+            "formatString": "#,0"
+          },
+          {
+            "name": "Unique Police Incidents",
+            "expression": "CALCULATE(DISTINCTCOUNT(Incidents[ExternalId]), KEEPFILTERS(Incidents[Source] = \"Police incidents\"))",
+            "description": "Distinct police incident IDs within the current report filters.",
+            "lineageTag": "48879148-a00e-5660-a7cf-cfe86ffbb1ea",
+            "displayFolder": "Dashboard measures",
+            "formatString": "#,0"
+          },
+          {
+            "name": "Police Call Records",
+            "expression": "CALCULATE([Total Records], KEEPFILTERS(Incidents[Source] = \"Police calls\"))",
+            "description": "Dispatch record rows in a 72-hour window.",
+            "lineageTag": "f1e32485-895f-53d3-a92f-24884ee5e672",
+            "displayFolder": "Dashboard measures",
+            "formatString": "#,0"
+          },
+          {
+            "name": "Open 311 Records",
+            "expression": "CALCULATE([Total Records], KEEPFILTERS(Incidents[Source] = \"Open 311 reports\"))",
+            "description": "Open reports requested in the past 30 days.",
+            "lineageTag": "f0cf1714-d8d8-5e5f-9380-9c2675855f92",
+            "displayFolder": "Dashboard measures",
+            "formatString": "#,0"
+          },
+          {
+            "name": "Geocoded Records",
+            "expression": "CALCULATE([Total Records], Incidents[IsGeocoded] = 1)",
+            "description": "Records with coordinates within the SF bounding box.",
+            "lineageTag": "e5f1c8a6-e5d1-5105-9ef8-2cdc894cef0e",
+            "displayFolder": "Dashboard measures",
+            "formatString": "#,0"
+          },
+          {
+            "name": "Geocoded Share",
+            "expression": "DIVIDE([Geocoded Records], [Total Records], 0)",
+            "description": "Coverage among exported records, including missing/outside coordinates.",
+            "lineageTag": "36400daf-078d-5be6-bbe4-289f9e0ace86",
+            "displayFolder": "Dashboard measures",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "High Rule Severity Records",
+            "expression": "CALCULATE([Total Records], Incidents[Severity] = \"High (rule)\")",
+            "description": "Rule-based grouping; not a trained classifier.",
+            "lineageTag": "d3906eb9-7115-5399-b6e5-5b2712028a0f",
+            "displayFolder": "Dashboard measures",
+            "formatString": "#,0"
+          },
+          {
+            "name": "Crime Mean Latitude",
+            "expression": "CALCULATE(AVERAGE(Incidents[Latitude]), Incidents[Source] = \"Police incidents\", Incidents[IsGeocoded] = 1)",
+            "description": "Neighborhood centroid of geocoded police report rows.",
+            "lineageTag": "028795aa-e5ef-5d7f-91bd-195775b0a9ec",
+            "displayFolder": "Dashboard measures",
+            "formatString": "0.00000"
+          },
+          {
+            "name": "Crime Mean Longitude",
+            "expression": "CALCULATE(AVERAGE(Incidents[Longitude]), Incidents[Source] = \"Police incidents\", Incidents[IsGeocoded] = 1)",
+            "description": "Neighborhood centroid of geocoded police report rows.",
+            "lineageTag": "516ffe47-096d-5dd9-b0a9-8fcf19145461",
+            "displayFolder": "Dashboard measures",
+            "formatString": "0.00000"
+          },
+          {
+            "name": "Sampled Locations",
+            "expression": "COUNTROWS(RiskLocations)",
+            "description": "Seeded sampled locations, not walking routes.",
+            "lineageTag": "3fe5ed5b-4ea7-5bef-ace9-b01a2ed45e48",
+            "displayFolder": "Dashboard measures",
+            "formatString": "#,0"
+          },
+          {
+            "name": "Flagged Heuristic Locations",
+            "expression": "CALCULATE([Sampled Locations], RiskLocations[HeuristicFlag] = 1)",
+            "description": "Proxy labels from documented weighted incident counts.",
+            "lineageTag": "919da694-d051-5703-b1fa-2e36188614ab",
+            "displayFolder": "Dashboard measures",
+            "formatString": "#,0"
+          },
+          {
+            "name": "Heuristic Flagged Share",
+            "expression": "DIVIDE([Flagged Heuristic Locations], [Sampled Locations], 0)",
+            "description": "Not an observed unsafe-area prevalence or probability of danger.",
+            "lineageTag": "d789a86b-0a2e-57f0-ba6b-a7db429f174c",
+            "displayFolder": "Dashboard measures",
+            "formatString": "0.0%"
+          },
+          {
+            "name": "Mean Proxy Risk",
+            "expression": "AVERAGE(RiskLocations[ProxyRiskScore])",
+            "description": "Weighted incident-count proxy, not the route scoring index.",
+            "lineageTag": "0325d30a-4f26-5948-bceb-904915b036a0",
+            "displayFolder": "Dashboard measures",
+            "formatString": "0.0"
+          },
+          {
+            "name": "Raw Source Rows",
+            "expression": "SUM(SourceQuality[FetchedRows])",
+            "description": "Includes duplicate source rows before deduplication.",
+            "lineageTag": "7915787a-8f72-5e37-89fb-ea67a9d4e748",
+            "displayFolder": "Dashboard measures",
+            "formatString": "#,0"
+          },
+          {
+            "name": "Duplicates Removed",
+            "expression": "SUM(SourceQuality[DuplicatesRemoved])",
+            "description": "Duplicate rows within each source, not cross-source deduplication.",
+            "lineageTag": "3da5d08a-63fc-5ad5-bd65-1282b1743d6e",
+            "displayFolder": "Dashboard measures",
+            "formatString": "#,0"
+          },
+          {
+            "name": "Missing Coordinate Rows",
+            "expression": "SUM(SourceQuality[MissingCoordinates])",
+            "description": "Retained for quality reporting; not shown on maps.",
+            "lineageTag": "9a1954cb-89d3-5772-aee6-abd9d8537761",
+            "displayFolder": "Dashboard measures",
+            "formatString": "#,0"
+          },
+          {
+            "name": "Missing Time Rows",
+            "expression": "SUM(SourceQuality[MissingTime])",
+            "description": "Malformed/missing source event timestamps.",
+            "lineageTag": "c9cd9d85-e95c-5d32-805b-b0a6f3726ab9",
+            "displayFolder": "Dashboard measures",
+            "formatString": "#,0"
+          },
+          {
+            "name": "Unknown Neighborhood Rows",
+            "expression": "SUM(SourceQuality[UnknownNeighborhood])",
+            "description": "Source did not supply analysis neighborhood.",
+            "lineageTag": "4f9e6b09-b29c-55d8-9fb8-750c7f24e59f",
+            "displayFolder": "Dashboard measures",
+            "formatString": "#,0"
+          },
+          {
+            "name": "Last Refreshed UTC",
+            "expression": "FORMAT(MAX(RefreshMetadata[RefreshedUTC]), \"yyyy-MM-dd HH:mm\") & \" UTC\"",
+            "description": "Timestamp of the Python export, not a live stream.",
+            "lineageTag": "14725193-8394-5118-becd-7d9bbe4485d2",
+            "displayFolder": "Dashboard measures"
+          }
+        ]
+      },
+      {
+        "name": "SourceQuality",
+        "lineageTag": "08a7e43d-9772-5627-828f-b5eb6a70227c",
+        "columns": [
+          {
+            "name": "Source",
+            "dataType": "string",
+            "sourceColumn": "Source",
+            "summarizeBy": "none",
+            "lineageTag": "fdfd5ba1-27cb-500c-8981-95ba5b36ecd5",
+            "isHidden": false
+          },
+          {
+            "name": "WindowDays",
+            "dataType": "int64",
+            "sourceColumn": "WindowDays",
+            "summarizeBy": "none",
+            "lineageTag": "1bbedaef-0961-5c3a-b3d2-6ad8afd95a2a",
+            "isHidden": false
+          },
+          {
+            "name": "FetchedRows",
+            "dataType": "int64",
+            "sourceColumn": "FetchedRows",
+            "summarizeBy": "none",
+            "lineageTag": "83fde600-b14b-5f48-afb1-4b1f8109cf47",
+            "isHidden": false
+          },
+          {
+            "name": "ExportedRows",
+            "dataType": "int64",
+            "sourceColumn": "ExportedRows",
+            "summarizeBy": "none",
+            "lineageTag": "946bbb2b-c20a-56fe-af56-c688b873dcd6",
+            "isHidden": false
+          },
+          {
+            "name": "DuplicatesRemoved",
+            "dataType": "int64",
+            "sourceColumn": "DuplicatesRemoved",
+            "summarizeBy": "none",
+            "lineageTag": "46f2dc02-5c12-50c0-988b-2cd39007966e",
+            "isHidden": false
+          },
+          {
+            "name": "MissingCoordinates",
+            "dataType": "int64",
+            "sourceColumn": "MissingCoordinates",
+            "summarizeBy": "none",
+            "lineageTag": "f26a14b7-c722-5d14-8386-9acc11f64f15",
+            "isHidden": false
+          },
+          {
+            "name": "OutsideSF",
+            "dataType": "int64",
+            "sourceColumn": "OutsideSF",
+            "summarizeBy": "none",
+            "lineageTag": "ab9f8b65-3fa3-5c80-b8dc-647644262e4b",
+            "isHidden": false
+          },
+          {
+            "name": "MissingTime",
+            "dataType": "int64",
+            "sourceColumn": "MissingTime",
+            "summarizeBy": "none",
+            "lineageTag": "69be282e-29af-5752-9ab3-458b1e06111d",
+            "isHidden": false
+          },
+          {
+            "name": "UnknownNeighborhood",
+            "dataType": "int64",
+            "sourceColumn": "UnknownNeighborhood",
+            "summarizeBy": "none",
+            "lineageTag": "17239afe-f142-5ca1-aa23-d51b6b20c314",
+            "isHidden": false
+          },
+          {
+            "name": "RefreshedUTC",
+            "dataType": "dateTime",
+            "sourceColumn": "RefreshedUTC",
+            "summarizeBy": "none",
+            "lineageTag": "dc2aeae3-83d6-5099-be17-a84decb0d428",
+            "isHidden": false,
+            "formatString": "yyyy-MM-dd"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "SourceQuality",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Content = Web.Contents(DataFolder, [RelativePath=\"source_quality.csv\"]),",
+                "    Source = Csv.Document(Content, [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    EmptyAsNull = Table.ReplaceValue(Headers, \"\", null, Replacer.ReplaceValue, Table.ColumnNames(Headers)),",
+                "    Typed = Table.TransformColumnTypes(EmptyAsNull, {{\"Source\", type text}, {\"WindowDays\", Int64.Type}, {\"FetchedRows\", Int64.Type}, {\"ExportedRows\", Int64.Type}, {\"DuplicatesRemoved\", Int64.Type}, {\"MissingCoordinates\", Int64.Type}, {\"OutsideSF\", Int64.Type}, {\"MissingTime\", Int64.Type}, {\"UnknownNeighborhood\", Int64.Type}, {\"RefreshedUTC\", type datetime}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "RiskLocations",
+        "lineageTag": "f9c62cec-7542-5a7c-9774-2be256015c70",
+        "columns": [
+          {
+            "name": "SampleId",
+            "dataType": "int64",
+            "sourceColumn": "SampleId",
+            "summarizeBy": "none",
+            "lineageTag": "d76816c7-6dbd-5bd8-a10a-4fa816cc7d55",
+            "isHidden": false
+          },
+          {
+            "name": "Latitude",
+            "dataType": "double",
+            "sourceColumn": "Latitude",
+            "summarizeBy": "none",
+            "lineageTag": "8012841b-37d1-5c8e-a73a-de88f360455e",
+            "isHidden": false,
+            "dataCategory": "Latitude"
+          },
+          {
+            "name": "Longitude",
+            "dataType": "double",
+            "sourceColumn": "Longitude",
+            "summarizeBy": "none",
+            "lineageTag": "a72ca4b7-2896-5c7a-911d-67e1e143928c",
+            "isHidden": false,
+            "dataCategory": "Longitude"
+          },
+          {
+            "name": "CrimeCount",
+            "dataType": "int64",
+            "sourceColumn": "CrimeCount",
+            "summarizeBy": "none",
+            "lineageTag": "c8707f4e-dbd6-55c7-9f4c-200a38e0aee9",
+            "isHidden": false
+          },
+          {
+            "name": "ViolentCrimes",
+            "dataType": "int64",
+            "sourceColumn": "ViolentCrimes",
+            "summarizeBy": "none",
+            "lineageTag": "00f7f8c1-561c-5cde-8524-f73daa4687f6",
+            "isHidden": false
+          },
+          {
+            "name": "PropertyCrimes",
+            "dataType": "int64",
+            "sourceColumn": "PropertyCrimes",
+            "summarizeBy": "none",
+            "lineageTag": "f971bb7d-7a9a-53e2-ad94-ea582a99c43f",
+            "isHidden": false
+          },
+          {
+            "name": "DrugCrimes",
+            "dataType": "int64",
+            "sourceColumn": "DrugCrimes",
+            "summarizeBy": "none",
+            "lineageTag": "7028a252-156e-575b-97fe-038d5d100980",
+            "isHidden": false
+          },
+          {
+            "name": "PriorityCalls",
+            "dataType": "int64",
+            "sourceColumn": "PriorityCalls",
+            "summarizeBy": "none",
+            "lineageTag": "5b5111fe-5dba-544d-9d10-2ccd714c07cf",
+            "isHidden": false
+          },
+          {
+            "name": "HazardCount",
+            "dataType": "int64",
+            "sourceColumn": "HazardCount",
+            "summarizeBy": "none",
+            "lineageTag": "72b4af0b-31b7-5034-8e12-c85121438b85",
+            "isHidden": false
+          },
+          {
+            "name": "Encampments",
+            "dataType": "int64",
+            "sourceColumn": "Encampments",
+            "summarizeBy": "none",
+            "lineageTag": "28f06563-5e1e-5183-ac01-25bd49c19ee0",
+            "isHidden": false
+          },
+          {
+            "name": "Needles",
+            "dataType": "int64",
+            "sourceColumn": "Needles",
+            "summarizeBy": "none",
+            "lineageTag": "cba269b0-b72a-54d9-810d-199eb0bbe623",
+            "isHidden": false
+          },
+          {
+            "name": "LightingIssues",
+            "dataType": "int64",
+            "sourceColumn": "LightingIssues",
+            "summarizeBy": "none",
+            "lineageTag": "3ba62ec1-50d3-5391-a6b6-333ad85cdc98",
+            "isHidden": false
+          },
+          {
+            "name": "BlockedSidewalks",
+            "dataType": "int64",
+            "sourceColumn": "BlockedSidewalks",
+            "summarizeBy": "none",
+            "lineageTag": "d38bb459-8512-5f77-8a34-220e84edebfd",
+            "isHidden": false
+          },
+          {
+            "name": "ProxyRiskScore",
+            "dataType": "double",
+            "sourceColumn": "ProxyRiskScore",
+            "summarizeBy": "none",
+            "lineageTag": "ea0a2487-2cf1-5d7a-9a34-0a0eaef0c549",
+            "isHidden": false
+          },
+          {
+            "name": "HeuristicFlag",
+            "dataType": "int64",
+            "sourceColumn": "HeuristicFlag",
+            "summarizeBy": "none",
+            "lineageTag": "4160f06a-bb2d-5968-9158-fabb914d7d9f",
+            "isHidden": false
+          },
+          {
+            "name": "HeuristicClass",
+            "dataType": "string",
+            "sourceColumn": "HeuristicClass",
+            "summarizeBy": "none",
+            "lineageTag": "cc446c94-e318-5bbb-9ca5-3b91c1b1f243",
+            "isHidden": false
+          },
+          {
+            "name": "AssessmentDate",
+            "dataType": "dateTime",
+            "sourceColumn": "AssessmentDate",
+            "summarizeBy": "none",
+            "lineageTag": "bd2be372-36f3-562e-bf0d-d930ce3bdaaf",
+            "isHidden": false,
+            "formatString": "yyyy-MM-dd"
+          },
+          {
+            "name": "AssessmentUTC",
+            "dataType": "dateTime",
+            "sourceColumn": "AssessmentUTC",
+            "summarizeBy": "none",
+            "lineageTag": "04abe6eb-d931-50df-8dfe-47532dbe877b",
+            "isHidden": false,
+            "formatString": "yyyy-MM-dd"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "RiskLocations",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Content = Web.Contents(DataFolder, [RelativePath=\"risk_locations.csv\"]),",
+                "    Source = Csv.Document(Content, [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    EmptyAsNull = Table.ReplaceValue(Headers, \"\", null, Replacer.ReplaceValue, Table.ColumnNames(Headers)),",
+                "    Typed = Table.TransformColumnTypes(EmptyAsNull, {{\"SampleId\", Int64.Type}, {\"Latitude\", type number}, {\"Longitude\", type number}, {\"CrimeCount\", Int64.Type}, {\"ViolentCrimes\", Int64.Type}, {\"PropertyCrimes\", Int64.Type}, {\"DrugCrimes\", Int64.Type}, {\"PriorityCalls\", Int64.Type}, {\"HazardCount\", Int64.Type}, {\"Encampments\", Int64.Type}, {\"Needles\", Int64.Type}, {\"LightingIssues\", Int64.Type}, {\"BlockedSidewalks\", Int64.Type}, {\"ProxyRiskScore\", type number}, {\"HeuristicFlag\", Int64.Type}, {\"HeuristicClass\", type text}, {\"AssessmentDate\", type datetime}, {\"AssessmentUTC\", type datetime}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Calendar",
+        "lineageTag": "30a8c733-ff62-56bb-826d-6fe5896ed1d1",
+        "columns": [
+          {
+            "name": "Date",
+            "dataType": "dateTime",
+            "sourceColumn": "Date",
+            "summarizeBy": "none",
+            "lineageTag": "f8e28794-e4bc-5ff0-b740-01cab925e44a",
+            "isHidden": false,
+            "formatString": "yyyy-MM-dd",
+            "isKey": true
+          },
+          {
+            "name": "Year",
+            "dataType": "int64",
+            "sourceColumn": "Year",
+            "summarizeBy": "none",
+            "lineageTag": "8e31533b-b2dd-57ff-a0b7-da9b61101ec6",
+            "isHidden": false
+          },
+          {
+            "name": "Month",
+            "dataType": "string",
+            "sourceColumn": "Month",
+            "summarizeBy": "none",
+            "lineageTag": "bb6b7dbd-3cab-57a1-941a-de84b86cb366",
+            "isHidden": false,
+            "sortByColumn": "MonthNumber"
+          },
+          {
+            "name": "MonthNumber",
+            "dataType": "int64",
+            "sourceColumn": "MonthNumber",
+            "summarizeBy": "none",
+            "lineageTag": "98877738-9e00-5ce3-a8ce-7d6ddbaffd5b",
+            "isHidden": true
+          },
+          {
+            "name": "Weekday",
+            "dataType": "string",
+            "sourceColumn": "Weekday",
+            "summarizeBy": "none",
+            "lineageTag": "9ffa39d9-767c-550b-985b-734991a4e821",
+            "isHidden": false,
+            "sortByColumn": "WeekdayNumber"
+          },
+          {
+            "name": "WeekdayNumber",
+            "dataType": "int64",
+            "sourceColumn": "WeekdayNumber",
+            "summarizeBy": "none",
+            "lineageTag": "63bf011b-3b2f-5996-83b5-ddd7641804a5",
+            "isHidden": true
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Calendar",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Content = Web.Contents(DataFolder, [RelativePath=\"calendar.csv\"]),",
+                "    Source = Csv.Document(Content, [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    EmptyAsNull = Table.ReplaceValue(Headers, \"\", null, Replacer.ReplaceValue, Table.ColumnNames(Headers)),",
+                "    Typed = Table.TransformColumnTypes(EmptyAsNull, {{\"Date\", type datetime}, {\"Year\", Int64.Type}, {\"Month\", type text}, {\"MonthNumber\", Int64.Type}, {\"Weekday\", type text}, {\"WeekdayNumber\", Int64.Type}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "RefreshMetadata",
+        "lineageTag": "cb87a565-cee5-5bcc-8f49-e472ce1a03d8",
+        "columns": [
+          {
+            "name": "RefreshedUTC",
+            "dataType": "dateTime",
+            "sourceColumn": "RefreshedUTC",
+            "summarizeBy": "none",
+            "lineageTag": "e9ecdb8a-5b0d-5dcc-a258-aaf6101b8fd3",
+            "isHidden": false,
+            "formatString": "yyyy-MM-dd"
+          },
+          {
+            "name": "SampleCount",
+            "dataType": "int64",
+            "sourceColumn": "SampleCount",
+            "summarizeBy": "none",
+            "lineageTag": "142677b9-f12c-5927-8600-5e0b8985fbd2",
+            "isHidden": false
+          },
+          {
+            "name": "Seed",
+            "dataType": "int64",
+            "sourceColumn": "Seed",
+            "summarizeBy": "none",
+            "lineageTag": "229b546b-a0b8-5d35-9432-5c5ba9ff6a5e",
+            "isHidden": false
+          }
+        ],
+        "partitions": [
+          {
+            "name": "RefreshMetadata",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Content = Web.Contents(DataFolder, [RelativePath=\"refresh.csv\"]),",
+                "    Source = Csv.Document(Content, [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),",
+                "    Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                "    EmptyAsNull = Table.ReplaceValue(Headers, \"\", null, Replacer.ReplaceValue, Table.ColumnNames(Headers)),",
+                "    Typed = Table.TransformColumnTypes(EmptyAsNull, {{\"RefreshedUTC\", type datetime}, {\"SampleCount\", Int64.Type}, {\"Seed\", Int64.Type}}, \"en-US\")",
+                "in",
+                "    Typed"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Sources",
+        "lineageTag": "ab92bee6-9c54-5824-86d1-f042b395c1d2",
+        "columns": [
+          {
+            "name": "Source",
+            "dataType": "string",
+            "sourceColumn": "Source",
+            "summarizeBy": "none",
+            "lineageTag": "d8cccb75-cbd6-5fa4-abcb-3713e5e76967",
+            "isHidden": false,
+            "isKey": true
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Sources",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Rows = #table(type table [Source = text], {{\"Police incidents\"}, {\"Police calls\"}, {\"Open 311 reports\"}})",
+                "in",
+                "    Rows"
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "name": "93eb6511-7008-5b5f-8805-316dba38c8b8",
+        "fromTable": "Incidents",
+        "fromColumn": "EventDate",
+        "toTable": "Calendar",
+        "toColumn": "Date",
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "55ddbd0c-020d-54e9-9c42-f6b78fff0530",
+        "fromTable": "RiskLocations",
+        "fromColumn": "AssessmentDate",
+        "toTable": "Calendar",
+        "toColumn": "Date",
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "5badf723-1ce7-56ca-b515-af4e3ff8d022",
+        "fromTable": "Incidents",
+        "fromColumn": "Source",
+        "toTable": "Sources",
+        "toColumn": "Source",
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "crossFilteringBehavior": "oneDirection"
+      },
+      {
+        "name": "1ac3cdfe-ca84-5089-9671-a56e2ab0ee6d",
+        "fromTable": "SourceQuality",
+        "fromColumn": "Source",
+        "toTable": "Sources",
+        "toColumn": "Source",
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "crossFilteringBehavior": "oneDirection"
+      }
+    ]
+  }
+}

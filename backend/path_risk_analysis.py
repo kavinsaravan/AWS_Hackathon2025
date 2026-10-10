@@ -8,13 +8,14 @@ import json
 import math
 import os
 import time
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 import requests
 
-CRIME_API_URL = 'https://data.sfgov.org/resource/gnap-fj3t.json'
-API_311_URL = 'https://data.sfgov.org/resource/vw6y-z8j6.json'
+CRIME_API_URL = 'https://data.sf.gov/resource/gnap-fj3t.json'
+API_311_URL = 'https://data.sf.gov/resource/vw6y-z8j6.json'
 SF_TIMEZONE = ZoneInfo('America/Los_Angeles')
 S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', 'my-path-risk-data')
 
@@ -38,24 +39,36 @@ def _fetch_records(url, bounds, where, coordinate_field, order, api_key=None, se
         raise ValueError('Geographic bounds are required')
     spatial = (f"within_box({coordinate_field}, {bounds['north']}, "
                f"{bounds['west']}, {bounds['south']}, {bounds['east']})")
-    headers = {'X-App-Token': api_key} if api_key else {}
+    headers = {'User-Agent': 'SafePathSF/1.0'}
+    if api_key:headers['X-App-Token'] = api_key
     records = []
     deadline = time.monotonic() + 20
     # Paginate rather than silently scoring a truncated source response.
     for offset in range(0, 15000, 5000):
         if time.monotonic() >= deadline:
             raise IncidentDataUnavailable('Incident query took too long')
-        try:
-            response = requests.get(url, params={
-                '$where': f'({where}) AND {spatial}',
-                '$limit': 5000, '$offset': offset, '$order': order, '$select': select,
-            }, headers=headers, timeout=(3, min(6, max(1, deadline - time.monotonic()))))
-            response.raise_for_status()
-            page = response.json()
-            if not isinstance(page, list) or any(not isinstance(item, dict) for item in page):
-                raise ValueError('Invalid incident response')
-        except (requests.RequestException, ValueError) as error:
-            raise IncidentDataUnavailable('Unable to retrieve incident data') from error
+        for attempt in range(2):
+            remaining = deadline - time.monotonic()
+            if remaining <= 2:
+                raise IncidentDataUnavailable('Incident query took too long')
+            try:
+                response = requests.get(url, params={
+                    '$where': f'({where}) AND {spatial}',
+                    '$limit': 5000, '$offset': offset, '$order': order, '$select': select,
+                }, headers=headers, timeout=(2, min(8, remaining-2)))
+                response.raise_for_status()
+                page = response.json()
+                if not isinstance(page, list) or any(not isinstance(item, dict) for item in page):
+                    raise ValueError('Invalid incident response')
+                break
+            except (requests.RequestException, ValueError) as error:
+                transient = isinstance(error, (requests.Timeout, requests.ConnectionError)) or (
+                    isinstance(error, requests.HTTPError) and error.response is not None
+                    and error.response.status_code in (429, 502, 503, 504))
+                if attempt == 0 and transient and deadline-time.monotonic() > 3:
+                    time.sleep(.2)
+                    continue
+                raise IncidentDataUnavailable('Unable to retrieve incident data') from error
         records.extend(page)
         if len(page) < 5000:
             return records
@@ -75,7 +88,7 @@ def fetch_crime_data(area_bounds, api_key=None, current_time=None):
 
 def fetch_311_data(area_bounds, api_key=None):
     return _fetch_records(API_311_URL, area_bounds,
-                         "status_description = 'Open' AND caseless_one_of(service_name, "
+                         "status_description = 'Open' AND service_name in ("
                          "'Encampment', 'Encampments', 'Aggressive/Threatening')",
                          'point_geom', 'service_request_id ASC', api_key,
                          'requested_datetime,status_description,service_name,point_geom')
@@ -151,9 +164,46 @@ def min_distance_to_path(incident_coords, path):
     return distance
 
 
+
+class RouteSegmentIndex:
+    """Index nearby segments once per route, preserving point-to-segment distance.
+
+    Contributions beyond 1km are below 9*exp(-50), about 1.8e-21 per
+    incident. Omitting them avoids scanning every vertex for every report.
+    """
+    CELL = .005
+    CUTOFF_KM = 1.0
+
+    def __init__(self, path):
+        self.cells = defaultdict(list)
+        for start, end in zip(path, path[1:]):
+            segment = (start[0], start[1], end[0]-start[0], end[1]-start[1])
+            south, north = min(start[0], end[0])-.01, max(start[0], end[0])+.01
+            west, east = min(start[1], end[1])-.013, max(start[1], end[1])+.013
+            for i in range(math.floor(south/self.CELL), math.floor(north/self.CELL)+1):
+                for j in range(math.floor(west/self.CELL), math.floor(east/self.CELL)+1):
+                    self.cells[(i,j)].append(segment)
+
+    def distance(self, coords):
+        lat,lng = coords
+        segments = self.cells.get((math.floor(lat/self.CELL), math.floor(lng/self.CELL)), ())
+        scale_x = 6371*math.cos(math.radians(lat))*math.pi/180
+        scale_y = 6371*math.pi/180
+        best = self.CUTOFF_KM**2
+        for start_lat,start_lng,dlat,dlng in segments:
+            ax,ay = (start_lng-lng)*scale_x,(start_lat-lat)*scale_y
+            dx,dy = dlng*scale_x,dlat*scale_y
+            length_squared = dx*dx+dy*dy
+            fraction = max(0,min(1,-(ax*dx+ay*dy)/length_squared)) if length_squared else 0
+            squared = (ax+fraction*dx)**2+(ay+fraction*dy)**2
+            if squared < best:best = squared
+        return math.sqrt(best) if best < self.CUTOFF_KM**2 else float('inf')
+
+
 def calculate_risk_score(path, incidents, incident_type, current_time=None):
     now = parse_incident_time(current_time or datetime.now(timezone.utc))
     total_risk = 0.0
+    segment_index = RouteSegmentIndex(path)
     for incident in incidents:
         coords = incident_coordinates(incident, incident_type)
         if coords is None:
@@ -172,7 +222,9 @@ def calculate_risk_score(path, incidents, incident_type, current_time=None):
         weight = assign_risk(incident, incident_type)
         decay = 72 if weight == 3 else 24
         magnitude = weight if encampment else max(0, weight * (1 - age_hours / decay))
-        distance = min_distance_to_path(coords, path)
+        if magnitude == 0:
+            continue
+        distance = segment_index.distance(coords)
         total_risk += magnitude ** 2 * math.exp(-(distance ** 2) / 0.02)
     return total_risk
 

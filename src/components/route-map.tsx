@@ -108,7 +108,7 @@ export default function RouteMap({ routeCalculated, origin, destination, routes,
   const endIcon = createCustomIcon("#06b6d4", "D")
 
   return (
-    <Card className="relative h-[calc(100vh-12rem)] overflow-hidden shadow-lg border-2 border-border/50">
+    <Card className="relative h-[420px] lg:h-[650px] overflow-hidden shadow-lg border-2 border-border/50">
       <MapContainer
         center={defaultCenter}
         zoom={defaultZoom}

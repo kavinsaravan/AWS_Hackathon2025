@@ -82,4 +82,4 @@ def score_routes(payload):
     return {'routes': results, 'assessedAt': now.isoformat(),
             'dataFetchedAt': fetched_at, 'dataMode': data_mode,
             'sources': {'policeCalls': len(crimes), 'open311Reports': len(hazards)},
-            'model': 'incident-distance-time-v1'}
+            'model': 'incident-distance-time-v2'}

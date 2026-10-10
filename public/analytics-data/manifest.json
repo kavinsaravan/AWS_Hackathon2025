@@ -1,0 +1,53 @@
+{
+  "refreshed_at_utc": "2026-10-10T06:33:15.552973+00:00",
+  "incident_rows": 38037,
+  "risk_location_rows": 1000,
+  "seed": 42,
+  "sources": [
+    {
+      "WindowDays": 90,
+      "FetchedRows": 22322,
+      "ExportedRows": 22322,
+      "DuplicatesRemoved": 0,
+      "MissingCoordinates": 777,
+      "OutsideSF": 85,
+      "MissingTime": 0,
+      "UnknownNeighborhood": 780,
+      "Source": "Police incidents",
+      "RefreshedUTC": "2026-10-10 06:33:15"
+    },
+    {
+      "WindowDays": 3,
+      "FetchedRows": 3954,
+      "ExportedRows": 3954,
+      "DuplicatesRemoved": 0,
+      "MissingCoordinates": 1239,
+      "OutsideSF": 14,
+      "MissingTime": 0,
+      "UnknownNeighborhood": 1241,
+      "Source": "Police calls",
+      "RefreshedUTC": "2026-10-10 06:33:15"
+    },
+    {
+      "WindowDays": 30,
+      "FetchedRows": 11761,
+      "ExportedRows": 11761,
+      "DuplicatesRemoved": 0,
+      "MissingCoordinates": 115,
+      "OutsideSF": 30,
+      "MissingTime": 0,
+      "UnknownNeighborhood": 118,
+      "Source": "Open 311 reports",
+      "RefreshedUTC": "2026-10-10 06:33:15"
+    }
+  ],
+  "timezone": "America/Los_Angeles",
+  "map_scope": "SF bounding box; missing/outside coordinates retained for quality counts and omitted from map",
+  "severity": "Rule-based categorization; not a validated probability of safety",
+  "risk_locations": "Sampled points with heuristic incident-count labels, not evaluated walking routes",
+  "source_urls": {
+    "crime": "https://data.sfgov.org/resource/wg3w-h783.json",
+    "calls": "https://data.sfgov.org/resource/gnap-fj3t.json",
+    "hazards": "https://data.sfgov.org/resource/vw6y-z8j6.json"
+  }
+}
