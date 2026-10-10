@@ -1,4 +1,5 @@
 import type { Route } from "@/components/safe-path-app"
+import { assessRouteSafety } from "./routeSafety"
 
 const GRAPHHOPPER_API_KEY = process.env.REACT_APP_GRAPHHOPPER_API_KEY || ""
 const GEOCODING_URL = "https://graphhopper.com/api/1/geocode"
@@ -116,81 +117,43 @@ export async function calculateRoutes(
       throw new Error("No routes found")
     }
 
-    // Step 3: Convert GraphHopper routes to our Route format
-    const convertedRoutes: Route[] = data.paths.map((path, index) => {
-      const distanceInMiles = (path.distance / 1609.34).toFixed(1)
-      const timeInMinutes = Math.round(path.time / 1000 / 60)
-
-      // Convert coordinates from [lng, lat] to {lat, lng}
-      const coordinates = path.points.coordinates.map((coord) => ({
-        lat: coord[1],
-        lng: coord[0],
-      }))
-
-      // Calculate safety score (for now, based on distance and time)
-      // In a real app, you'd integrate crime data, lighting data, etc.
-      const safetyScore = index === 0 ? 95 : index === 1 ? 88 : 78
-
-      // Generate route name
-      const routeNames = ["Safest Route", "Balanced Route", "Fastest Route"]
-      const routeName = routeNames[index] || `Route ${index + 1}`
-
-      // Route colors
-      const colors = ["#10b981", "#3b82f6", "#f59e0b"]
-
-      // Generate mock waypoints based on route length
-      const numWaypoints = 3
-      const waypoints = Array.from({ length: numWaypoints }, (_, i) => {
-        const segmentIndex = Math.floor((coordinates.length / (numWaypoints + 1)) * (i + 1))
-        return {
-          name: `Waypoint ${i + 1}`,
-          type: index === 0 ? "Well-lit area" : index === 1 ? "Moderate traffic" : "Direct route",
-          safe: index === 0 ? true : index === 2 && i === 0 ? false : true,
-        }
-      })
-
+    // Keep actual distinct alternatives; never manufacture additional routes.
+    const uniquePaths = data.paths.filter((path, index, paths) =>
+      paths.findIndex(other => JSON.stringify(other.points.coordinates) ===
+        JSON.stringify(path.points.coordinates)) === index
+    ).slice(0, 3)
+    const candidates = uniquePaths.map((path, index) => ({
+      id: index + 1,
+      coordinates: path.points.coordinates.map(([lng, lat]) => ({ lat, lng })),
+    }))
+    const assessment = await assessRouteSafety(candidates)
+    const fastestId = candidates.reduce((fastest, candidate) =>
+      uniquePaths[candidate.id - 1].time < uniquePaths[fastest.id - 1].time ? candidate : fastest
+    ).id
+    const ranked = [...assessment.routes].sort((a, b) =>
+      a.totalRisk - b.totalRisk || uniquePaths[a.id - 1].time - uniquePaths[b.id - 1].time
+    )
+    const routes: Route[] = ranked.map((risk, index) => {
+      const path = uniquePaths[risk.id - 1]
+      const isFastest = risk.id === fastestId
       return {
-        id: index + 1,
-        name: routeName,
-        distance: `${distanceInMiles} mi`,
-        time: `${timeInMinutes} min`,
-        safetyScore: safetyScore,
-        crimeScore: safetyScore + Math.floor(Math.random() * 5),
-        timeScore: 100 - index * 10,
-        socialScore: safetyScore - Math.floor(Math.random() * 5),
-        pedestrianScore: safetyScore + Math.floor(Math.random() * 3),
-        coordinates: coordinates,
-        waypoints: waypoints,
-        color: colors[index] || "#6b7280",
+        id: risk.id,
+        name: index === 0 ? (isFastest ? "Lowest Risk · Fastest" : "Lowest Reported Risk")
+          : isFastest ? "Fastest Route" : "Alternative Route",
+        distance: `${(path.distance / 1609.34).toFixed(1)} mi`,
+        time: `${Math.round(path.time / 60000)} min`,
+        safetyScore: risk.safetyScore,
+        totalRisk: risk.totalRisk,
+        crimeRisk: risk.crimeRisk,
+        hazardRisk: risk.hazardRisk,
+        assessedAt: assessment.assessedAt,
+        dataFetchedAt: assessment.dataFetchedAt,
+        sources: assessment.sources,
+        coordinates: candidates[risk.id - 1].coordinates,
+        waypoints: [],
+        color: index === 0 ? "#10b981" : isFastest ? "#f59e0b" : "#3b82f6",
       }
     })
-
-    // Ensure we always have 3 routes
-    const routes: Route[] = []
-    const routeNames = ["Safest Route", "Balanced Route", "Fastest Route"]
-    const colors = ["#10b981", "#3b82f6", "#f59e0b"]
-
-    for (let i = 0; i < 3; i++) {
-      if (convertedRoutes[i]) {
-        // Use the converted route if it exists
-        routes.push(convertedRoutes[i])
-      } else {
-        // Create a variant of the first route with slightly adjusted scores
-        const baseRoute = convertedRoutes[0]
-        const safetyScore = 95 - (i * 7) // 95, 88, 81
-        routes.push({
-          ...baseRoute,
-          id: i + 1,
-          name: routeNames[i],
-          safetyScore: safetyScore,
-          crimeScore: safetyScore + Math.floor(Math.random() * 5),
-          timeScore: 100 - i * 10,
-          socialScore: safetyScore - Math.floor(Math.random() * 5),
-          pedestrianScore: safetyScore + Math.floor(Math.random() * 3),
-          color: colors[i],
-        })
-      }
-    }
 
     return {
       routes,
@@ -199,7 +162,7 @@ export async function calculateRoutes(
     }
   } catch (error) {
     console.error("GraphHopper routing error:", error)
-    return null
+    throw error
   }
 }
 

@@ -1,4 +1,5 @@
 import json
+import base64
 import boto3
 import requests
 import hashlib
@@ -118,7 +119,7 @@ def store_data_with_ttl(data_item):
 def get_cached_data():
     """Retrieve all non-expired cached data"""
     try:
-        # Scan for all items (DynamoDB will automatically filter expired TTL items)
+        # TTL deletion is asynchronous; explicitly filter expired records below.
         response = table.scan()
         items = response.get('Items', [])
         
@@ -127,13 +128,21 @@ def get_cached_data():
             response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
             items.extend(response.get('Items', []))
         
-        return items
+        now = int(datetime.now().timestamp())
+        return [item for item in items if 'data' in item and int(item.get('ttl', 0)) > now]
     except Exception as e:
         print(f"Error retrieving cached data: {e}")
         raise
 
 def lambda_handler(event, context):
     """Main Lambda handler function"""
+
+    if event.get('action') == 'refresh-safety-data':
+        from safety_data_store import SafetyDataStore
+        # Let scheduled failures raise so EventBridge can retry and report them.
+        snapshot = SafetyDataStore().load(force_refresh=True)
+        return {'refreshedAt': snapshot['fetchedAt'],
+                'policeCalls': len(snapshot['crimes']), 'open311Reports': len(snapshot['hazards'])}
 
     # Determine the action from the event (support both API Gateway v1 and v2)
     # API Gateway HTTP API (v2) uses requestContext.http.method and rawPath
@@ -155,6 +164,24 @@ def lambda_handler(event, context):
         path = event.get('path', '/fetch-new')
     
     try:
+        if http_method == 'POST' and path == '/score-routes':
+            from route_scoring import score_routes, IncidentDataUnavailable
+            try:
+                body = event.get('body') or '{}'
+                if event.get('isBase64Encoded'):
+                    body = base64.b64decode(body).decode('utf-8')
+                result = score_routes(json.loads(body))
+                status = 200
+            except (ValueError, TypeError, UnicodeError) as error:
+                status, result = 400, {'error': str(error)}
+            except IncidentDataUnavailable:
+                status, result = 503, {'error': 'Safety data is unavailable. Please try again later.'}
+            return {
+                'statusCode': status,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps(result)
+            }
+
         if http_method == 'POST' and path == '/fetch-new':
             # Fetch new data from API and store it
             api_data = fetch_api_data()
@@ -227,7 +254,7 @@ def lambda_handler(event, context):
                 },
                 'body': json.dumps({
                     'error': 'Invalid request',
-                    'message': 'Supported endpoints: POST /fetch-new, GET /data'
+                    'message': 'Supported endpoints: POST /fetch-new, GET /data, POST /score-routes'
                 })
             }
             

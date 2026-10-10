@@ -25,7 +25,7 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
     },
     {
       icon: TrendingUp,
-      label: "Safety Score",
+      label: "Incident Index",
       value: `${route.safetyScore}/100`,
       color: "text-accent",
     },

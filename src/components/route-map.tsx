@@ -211,7 +211,7 @@ export default function RouteMap({ routeCalculated, origin, destination, routes,
         <div className="absolute bottom-4 left-4 z-[1000]">
           <Badge className="gradient-primary text-white shadow-glow px-3 py-1.5">
             <div className="mr-2 h-2 w-2 animate-pulse rounded-full bg-white" />
-            Live Map
+            Route Map
           </Badge>
         </div>
       )}

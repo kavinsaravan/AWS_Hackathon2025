@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Lambda API Data Fetcher with DynamoDB Cache and 3-day TTL'
+Description: 'SafePath incident snapshots and on-demand route scoring'
 
 Parameters:
   ApiKey:
@@ -9,6 +9,18 @@ Parameters:
   ApiEndpoint:
     Type: String
     Description: External API endpoint URL
+
+  DataSfToken:
+    Type: String
+    Default: ''
+    NoEcho: true
+    Description: Optional Socrata app token for DataSF
+  LambdaDeploymentBucket:
+    Type: String
+    Description: Existing S3 bucket containing the packaged Lambda code (same AWS region)
+  LambdaDeploymentKey:
+    Type: String
+    Description: S3 key of the ZIP produced by scripts/package_routing_backend.sh
 
 Resources:
   # S3 Bucket for Crime Data Backup
@@ -101,10 +113,8 @@ Resources:
       Runtime: python3.11
       Handler: lambda_fetch_api.lambda_handler
       Code:
-        ZipFile: |
-          # Placeholder - replace with actual code deployment
-          def lambda_handler(event, context):
-              return {'statusCode': 200, 'body': 'Deploy actual code'}
+        S3Bucket: !Ref LambdaDeploymentBucket
+        S3Key: !Ref LambdaDeploymentKey
       Role: !GetAtt LambdaExecutionRole.Arn
       Timeout: 60
       MemorySize: 256
@@ -114,6 +124,8 @@ Resources:
           S3_BUCKET_NAME: !Ref CrimeDataBackupBucket
           API_KEY: !Ref ApiKey
           API_ENDPOINT: !Ref ApiEndpoint
+          DATASF_API_KEY: !Ref DataSfToken
+          SAFETY_CACHE_MAX_AGE_SECONDS: '300'
       Tags:
         - Key: Environment
           Value: Production
@@ -168,6 +180,13 @@ Resources:
       RouteKey: 'GET /data'
       Target: !Sub 'integrations/${LambdaIntegration}'
 
+  ScoreRoutesRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiGateway
+      RouteKey: 'POST /score-routes'
+      Target: !Sub 'integrations/${LambdaIntegration}'
+
   # API Gateway Stage
   ApiStage:
     Type: AWS::ApiGatewayV2::Stage
@@ -188,6 +207,26 @@ Resources:
         - Arn: !GetAtt ApiDataFetcherLambda.Arn
           Id: '1'
           Input: '{"httpMethod": "POST", "path": "/fetch-new"}'
+
+  SafetyDataRefreshRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: SafePathSafetyDataRefresh
+      Description: Refresh shared incident snapshots every five minutes
+      ScheduleExpression: 'rate(5 minutes)'
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt ApiDataFetcherLambda.Arn
+          Id: SafetySnapshotRefresh
+          Input: '{"action":"refresh-safety-data"}'
+
+  SafetyDataRefreshPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ApiDataFetcherLambda
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt SafetyDataRefreshRule.Arn
 
   # Permission for CloudWatch Events to invoke Lambda
   ScheduledFetchLambdaPermission:

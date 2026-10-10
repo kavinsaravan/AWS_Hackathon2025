@@ -16,10 +16,12 @@ export interface Route {
   distance: string
   time: string
   safetyScore: number
-  crimeScore: number
-  timeScore: number
-  socialScore: number
-  pedestrianScore: number
+  totalRisk: number
+  crimeRisk: number
+  hazardRisk: number
+  assessedAt: string
+  dataFetchedAt: string
+  sources: { policeCalls: number; open311Reports: number }
   coordinates: Array<{ lat: number; lng: number }>
   waypoints: Array<{ name: string; type: string; safe: boolean }>
   color: string
@@ -55,7 +57,7 @@ export default function SafePathApp() {
       }
 
       setRoutes(result.routes)
-      setSelectedRouteId(1)
+      setSelectedRouteId(result.routes[0].id)
       setRouteCalculated(true)
 
       // Save locations to localStorage for future use
@@ -137,7 +139,7 @@ export default function SafePathApp() {
                     </>
                   ) : (
                     <>
-                      Find Safest Route
+                      Compare Route Safety
                       <ChevronRight className="ml-2 h-5 w-5" />
                     </>
                   )}
@@ -156,6 +158,16 @@ export default function SafePathApp() {
             {routeCalculated && routes.length > 0 && (
               <Card className="p-6 shadow-lg border-2 border-border/50 bg-white/90 backdrop-blur">
                 <h2 className="mb-5 text-xl font-display font-bold text-foreground">Route Options</h2>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Incident safety index: higher means less reported risk, not a guarantee of safety.
+                  Based on police calls from the past 72 hours and open 311 safety reports.
+                  Scored {new Date(routes[0].assessedAt).toLocaleTimeString()} using data fetched {new Date(routes[0].dataFetchedAt).toLocaleTimeString()}.
+                </p>
+                {routes[0].sources.policeCalls === 0 && routes[0].sources.open311Reports === 0 && (
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    No matching reports were returned for this area. An empty result does not establish safety.
+                  </p>
+                )}
                 <div className="space-y-3">
                   {routes.map((route) => (
                     <button
