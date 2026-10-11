@@ -1,9 +1,32 @@
 import type { Route } from "@/components/safe-path-app"
 import { assessRouteSafety } from "./routeSafety"
 
-const GRAPHHOPPER_API_KEY = process.env.REACT_APP_GRAPHHOPPER_API_KEY || ""
-const GEOCODING_URL = "https://graphhopper.com/api/1/geocode"
-const ROUTING_URL = "https://graphhopper.com/api/1/route"
+const ROUTING_ENDPOINT = process.env.REACT_APP_API_ENDPOINT?.replace(/\/+$/, "") || ""
+
+async function requestRouting<T>(path: string, body: unknown): Promise<T> {
+  if (!ROUTING_ENDPOINT) throw new Error("Routing service is not configured.")
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 25000)
+  try {
+    const response = await fetch(`${ROUTING_ENDPOINT}/routing/${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    })
+    if (!response.ok) {
+      throw new Error(response.status === 400
+        ? "Please choose locations within San Francisco."
+        : "Routing is unavailable. Please try again later.")
+    }
+    return await response.json()
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Routing timed out. Please try again.")
+    }
+    throw error
+  } finally { clearTimeout(timeout) }
+}
 
 interface GeocodingResult {
   hits: Array<{
@@ -32,36 +55,7 @@ interface RoutingResult {
  */
 export async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
   try {
-    // Add San Francisco location bias if address doesn't already specify a city
-    let searchQuery = address
-    const lowerAddress = address.toLowerCase()
-    const hasCityContext = lowerAddress.includes("san francisco") ||
-                          lowerAddress.includes("sf") ||
-                          lowerAddress.includes(", ca") ||
-                          lowerAddress.includes("california")
-
-    if (!hasCityContext) {
-      searchQuery = `${address}, San Francisco, CA`
-    }
-
-    // San Francisco coordinates for location bias
-    const SF_LAT = 37.7749
-    const SF_LNG = -122.4194
-
-    const params = new URLSearchParams({
-      q: searchQuery,
-      point: `${SF_LAT},${SF_LNG}`, // Bias results toward San Francisco
-      locale: "en-US",
-      key: GRAPHHOPPER_API_KEY,
-    })
-
-    const response = await fetch(`${GEOCODING_URL}?${params.toString()}`)
-
-    if (!response.ok) {
-      throw new Error(`Geocoding failed: ${response.statusText}`)
-    }
-
-    const data: GeocodingResult = await response.json()
+    const data = await requestRouting<GeocodingResult>("geocode", { address })
 
     if (data.hits && data.hits.length > 0) {
       return data.hits[0].point
@@ -90,28 +84,9 @@ export async function calculateRoutes(
       throw new Error("Could not geocode addresses")
     }
 
-    // Step 2: Get multiple route alternatives
-    // Build URL with multiple 'point' parameters
-    const params = new URLSearchParams({
-      vehicle: "foot", // walking routes
-      locale: "en",
-      points_encoded: "false",
-      algorithm: "alternative_route",
-      "alternative_route.max_paths": "3",
-      key: GRAPHHOPPER_API_KEY,
+    const data = await requestRouting<RoutingResult>("route", {
+      origin: originCoords, destination: destCoords,
     })
-
-    // Add points manually (URLSearchParams doesn't support duplicate keys in object literal)
-    params.append("point", `${originCoords.lat},${originCoords.lng}`)
-    params.append("point", `${destCoords.lat},${destCoords.lng}`)
-
-    const response = await fetch(`${ROUTING_URL}?${params.toString()}`)
-
-    if (!response.ok) {
-      throw new Error(`Routing failed: ${response.statusText}`)
-    }
-
-    const data: RoutingResult = await response.json()
 
     if (!data.paths || data.paths.length === 0) {
       throw new Error("No routes found")
@@ -167,8 +142,8 @@ export async function calculateRoutes(
 }
 
 /**
- * Check if GraphHopper API key is configured
+ * Check if the backend routing endpoint is configured
  */
 export function isGraphHopperConfigured(): boolean {
-  return GRAPHHOPPER_API_KEY.length > 0
+  return ROUTING_ENDPOINT.length > 0
 }

@@ -1,127 +1,27 @@
-# GraphHopper API Setup Guide
+# GraphHopper routing through AWS
 
-SafePath uses GraphHopper's Routing API to calculate real walking routes with turn-by-turn navigation.
+SafePath sends addresses and SF walking-route endpoints to API Gateway. SafePathGraphHopperProxy authenticates to GraphHopper using its server-only GRAPHHOPPER_API_KEY environment variable. The browser receives coordinates and route geometry; AWS /score-routes continues to rank the alternatives using incident data.
 
-## Quick Setup (5 minutes)
+## Configuration
 
-### Step 1: Get Your Free API Key
+- Lambda: SafePathGraphHopperProxy, us-east-1, Node.js 24.x, index.handler, timeout 25 seconds, memory 256 MB. No VPC or Function URL is needed.
+- Set GRAPHHOPPER_API_KEY under the Lambda configuration. Use a replacement key and revoke any exposed key through GraphHopper. Do not paste credentials into source, a command argument, or logs.
+- Frontend configuration contains only REACT_APP_API_ENDPOINT and REACT_APP_TABLEAU_VIEW_URL. Do not use REACT_APP_GRAPHHOPPER_API_KEY; React build variables are public.
+- .env.production remains local and ignored. Vercel's build configuration does not contain a routing key.
 
-1. Go to [https://www.graphhopper.com/](https://www.graphhopper.com/)
-2. Click **"Sign Up"** (top right)
-3. Create a free account
-4. Once logged in, go to the [Dashboard](https://graphhopper.com/dashboard/)
-5. Click **"API Keys"** in the sidebar
-6. Click **"Create API Key"**
-7. Give it a name (e.g., "SafePath Development")
-8. Copy your API key
+## Deploy
 
-### Step 2: Add API Key to Your Project
+Run `python3 scripts/deploy_graphhopper_proxy.py` with authorized AWS credentials. This updates the existing console-created Lambda, migrates a legacy REACT_APP_GRAPHHOPPER_API_KEY variable to the backend-only name, backs up code/configuration to a private temporary directory, and creates or updates:
 
-1. In your project root directory, create a `.env` file:
-   ```bash
-   cp .env.example .env
-   ```
+- POST /routing/geocode: JSON `{ "address": "Ferry Building" }`
+- POST /routing/route: JSON `{ "origin": { "lat": 37.79, "lng": -122.39 }, "destination": { "lat": 37.78, "lng": -122.41 } }`
 
-2. Open `.env` and add your API key:
-   ```
-   REACT_APP_GRAPHHOPPER_API_KEY=your_actual_api_key_here
-   ```
+The new routes use the existing prod stage with automatic deployments. Lambda invocation permission is scoped to POST /routing/*. Each route is throttled to 2 requests/second with a burst of 10. These console-created resources are managed by this script separately from the existing backend CloudFormation stack.
 
-3. **Restart your development server:**
-   ```bash
-   # Stop the current server (Ctrl+C)
-   # Then restart:
-   npm start
-   ```
+The proxy accepts only bounded requests and SF coordinates, fixes the upstream host, walking profile and number of alternatives, and returns only the required coordinates/distance/time. It never relays or logs upstream error payloads or authenticated URLs. Origin checks are an extra browser restriction, not authentication: the endpoints remain public and API Gateway throttling reduces bursts rather than imposing a daily quota. Monitor GraphHopper usage and adjust limits for traffic.
 
-### Step 3: Test It Out!
+## Test
 
-1. Open your app at [http://localhost:3000](http://localhost:3000)
-2. Enter a starting point (e.g., "San Francisco City Hall")
-3. Enter a destination (e.g., "Ferry Building San Francisco")
-4. Click **"Find Safest Route"**
-5. The app will fetch real routes from GraphHopper! 🎉
+`node --test backend/graphhopper-proxy/proxy.test.mjs scripts/test_route_integration.cjs`
 
-## Features You Get
-
-With GraphHopper integration, you get:
-
-✅ **Real Route Calculation** - Actual walking routes, not mock data
-✅ **Multiple Alternatives** - Up to 3 different route options
-✅ **Accurate Distance & Time** - Real-world estimates
-✅ **Turn-by-Turn Coordinates** - Detailed path coordinates for map display
-✅ **Geocoding** - Convert addresses to GPS coordinates automatically
-
-## Free Tier Limits
-
-GraphHopper's free tier includes:
-- **500 requests per day**
-- **Routing & Geocoding APIs**
-- All standard features
-
-Perfect for development and small-scale applications!
-
-## API Endpoints Used
-
-SafePath uses two GraphHopper APIs:
-
-1. **Geocoding API** - Converts addresses to coordinates
-   - Endpoint: `https://graphhopper.com/api/1/geocode`
-
-2. **Routing API** - Calculates walking routes
-   - Endpoint: `https://graphhopper.com/api/1/route`
-   - Vehicle type: `foot` (walking routes)
-   - Algorithm: `alternative_route` (for multiple options)
-
-## Troubleshooting
-
-**Error: "GraphHopper API key not configured"**
-- Make sure you created the `.env` file
-- Verify the API key is correctly copied
-- Restart your development server after adding the key
-
-**Error: "Could not calculate routes"**
-- Check that your API key is valid
-- Verify you haven't exceeded the daily limit (500 requests)
-- Make sure the addresses are specific enough (include city/state)
-
-**Routes not showing on map**
-- Check the browser console for errors
-- Verify the addresses are valid locations
-- Try more specific addresses (e.g., "123 Market St, San Francisco, CA")
-
-## Example Addresses to Test
-
-Try these address pairs to see routing in action:
-
-**San Francisco:**
-- Start: "Union Square, San Francisco"
-- End: "Fisherman's Wharf, San Francisco"
-
-**New York:**
-- Start: "Times Square, New York"
-- End: "Central Park, New York"
-
-**Any City:**
-- Use specific landmarks or street addresses
-- Include city and state for best results
-
-## Next Steps
-
-Once you have routing working, you can:
-- Integrate real crime data for safety scoring
-- Add real-time weather conditions
-- Implement user location tracking
-- Store favorite routes
-- Add transit integration
-
-## Resources
-
-- [GraphHopper Documentation](https://docs.graphhopper.com/)
-- [API Playground](https://graphhopper.com/api/1/examples/)
-- [Routing API Docs](https://docs.graphhopper.com/#tag/Routing-API)
-- [Geocoding API Docs](https://docs.graphhopper.com/#tag/Geocoding-API)
-
----
-
-**Need help?** Check the [GraphHopper Community Forum](https://discuss.graphhopper.com/)
+Test a production journey from Union Square to Ferry Building. Browser requests should go to the AWS /routing endpoints and /score-routes, with no GraphHopper key or direct GraphHopper request. A backend or provider failure should show an error without simulated routes or scores.

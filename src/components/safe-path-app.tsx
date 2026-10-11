@@ -58,9 +58,9 @@ export default function SafePathApp() {
   const handleCalculateRoute = async () => {
     if (!origin || !destination) return
 
-    // Check if GraphHopper API is configured
+    // Check if the backend routing service is configured
     if (!isGraphHopperConfigured()) {
-      setError("GraphHopper API key not configured. Please add REACT_APP_GRAPHHOPPER_API_KEY to your .env file.")
+      setError("Routing service is not configured. Please try again later.")
       return
     }
 

@@ -9,7 +9,7 @@ const { stripTypeScriptTypes } = require('node:module');
 function load(fetch, endpoint = 'https://fixture.invalid/prod/') {
   const sandbox = { fetch, URLSearchParams, AbortController, setTimeout, clearTimeout,
     console: { error() {} }, process: { env: {
-      REACT_APP_GRAPHHOPPER_API_KEY: 'offline-fixture', REACT_APP_API_ENDPOINT: endpoint,
+      REACT_APP_API_ENDPOINT: endpoint,
     } } };
   vm.createContext(sandbox);
   for (const filename of ['routeSafety.ts', 'graphhopper.ts']) {
@@ -29,7 +29,7 @@ function fixture(paths, assessment) {
   const fetch = async (url, options) => {
     calls.push({ url, options });
     if (url.includes('/geocode')) return { ok: true, json: async () => ({ hits: [{ point: { lat: 37.77, lng: -122.42 } }] }) };
-    if (url.includes('/route?')) return { ok: true, json: async () => ({ paths }) };
+    if (url.endsWith('/routing/route')) return { ok: true, json: async () => ({ paths }) };
     return { ok: true, json: async () => assessment };
   };
   return { fetch, calls };
@@ -87,4 +87,19 @@ test('equal risks choose faster route first', async () => {
   const f = fixture([route(0, 20), route(.01, 10)], assessment([0, 0]));
   const result = await load(f.fetch).calculateRoutes('Origin', 'Destination');
   assert.equal(result.routes[0].id, 2);
+});
+
+ test('routing requests use only the backend, without a browser API key', async () => {
+  const f = fixture([route(0, 10)], assessment([1]));
+  await load(f.fetch).calculateRoutes('Origin', 'Destination');
+  for (const call of f.calls) {
+    assert.ok(call.url.startsWith('https://fixture.invalid/prod/'));
+    assert.equal(call.options.method, 'POST');
+    assert.ok(!call.url.includes('key='));
+    assert.ok(!call.options.body.includes('GRAPHHOPPER'));
+  }
+  const routing = f.calls.find(call => call.url.endsWith('/routing/route'));
+  assert.deepEqual(JSON.parse(routing.options.body), {
+    origin: { lat: 37.77, lng: -122.42 }, destination: { lat: 37.77, lng: -122.42 },
+  });
 });

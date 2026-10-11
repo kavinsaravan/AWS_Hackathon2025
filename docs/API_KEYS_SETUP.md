@@ -1,3 +1,5 @@
+> Current SafePath routing uses a server-only GraphHopper key in AWS Lambda. Follow [GRAPHHOPPER_SETUP.md](GRAPHHOPPER_SETUP.md). The service alternatives below are historical planning notes; never add private credentials to frontend build variables or Expo configuration.
+
 # SafePath SF - API Keys Setup Guide
 
 ## Required API Keys (All FREE)
