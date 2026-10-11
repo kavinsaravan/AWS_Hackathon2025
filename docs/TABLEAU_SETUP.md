@@ -1,5 +1,7 @@
 # SafePath Tableau Public dashboard
 
+Current work uses a single police-dispatch snapshot. See [dispatch snapshot setup](DISPATCH_SNAPSHOT_SETUP.md) for the new CSV, typed Google Sheet, and the pending Tableau upload. The published workbook described below still uses the earlier police-incident extract until it is republished. Automatic Google/Tableau refresh is deferred.
+
 The published report is [SafePathSF / CrimeDashboard](https://public.tableau.com/views/SafePathSF/CrimeDashboard).
 It contains three native Tableau worksheets: Crime Map, Crime Categories, and
 Reports Over Time. It uses the 21,460 mapped police records in the existing 90-day

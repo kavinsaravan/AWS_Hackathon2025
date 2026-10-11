@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Prepare a single, geocoded police-incident table for Tableau Public web authoring."""
+"""Prepare Tableau-compatible dispatch snapshots, with explicit legacy police-incident export support."""
 import argparse
 import csv
 import json
 import math
+import hashlib
+import requests
 from pathlib import Path
 
 FIELDS = ['RecordKey', 'ExternalId', 'Category', 'Neighborhood', 'District', 'EventDate',
@@ -49,10 +51,41 @@ def export_tableau(source_dir, output_dir):
     return metadata
 
 
+def download_snapshot(output_dir, api_origin="https://scdwndv5z4.execute-api.us-east-1.amazonaws.com/prod", summary_output=None):
+    response = requests.get(api_origin.rstrip('/') + '/analytics-manifest', timeout=30)
+    response.raise_for_status(); manifest = response.json()
+    response = requests.get(api_origin.rstrip('/') + '/analytics.csv', timeout=30)
+    response.raise_for_status(); raw = response.content
+    if manifest.get('source_type') != 'police_dispatch_calls' or manifest.get('fields') != FIELDS:
+        raise ValueError('The AWS dispatch export schema is invalid')
+    if hashlib.sha256(raw).hexdigest() != manifest.get('csv_sha256'):
+        raise ValueError('The AWS snapshot changed during download; retry without replacing the old file')
+    from io import StringIO
+    rows = list(csv.DictReader(StringIO(raw.decode('utf-8'))))
+    if not rows or len(rows) != manifest.get('rows') or len({row['RecordKey'] for row in rows}) != len(rows):
+        raise ValueError('Incomplete or duplicate dispatch export')
+    summary = None
+    if summary_output is not None:
+        response = requests.get(api_origin.rstrip('/') + '/analytics-summary', timeout=30)
+        response.raise_for_status(); summary = response.json()
+        if summary.get('refreshedUTC') != manifest.get('refreshed_at_utc') or summary.get('geocodedRecords') != len(rows):
+            raise ValueError('CSV and area summary came from different snapshots; retry')
+    output_dir = Path(output_dir); output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / 'sf-crime-incidents.csv').write_bytes(raw)
+    (output_dir / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    if summary is not None:
+        Path(summary_output).write_text(json.dumps(summary, separators=(',', ':')) + '\n')
+    print(f"Dispatch snapshot: {len(rows):,} mapped records")
+    return manifest
+
+
 if __name__ == '__main__':
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--source-dir', type=Path, default=root / 'public/analytics-data')
+    parser.add_argument('--source-dir', type=Path, help='Explicit legacy police-incident export directory; default downloads the AWS dispatch snapshot')
     parser.add_argument('--output-dir', type=Path, default=root / 'public/tableau')
+    parser.add_argument('--api-origin', default='https://scdwndv5z4.execute-api.us-east-1.amazonaws.com/prod')
+    parser.add_argument('--summary-output', type=Path, default=root / 'public/safety-analytics.json')
     args = parser.parse_args()
-    export_tableau(args.source_dir, args.output_dir)
+    if args.source_dir:export_tableau(args.source_dir, args.output_dir)
+    else:download_snapshot(args.output_dir, args.api_origin, args.summary_output)

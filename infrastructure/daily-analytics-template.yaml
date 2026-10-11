@@ -1,0 +1,110 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Daily SafePath police-dispatch exports for Google Sheets and Tableau Public
+Parameters:
+  ExistingApiId:
+    Type: String
+  ExistingDataBucket:
+    Type: String
+  ExistingCacheTable:
+    Type: String
+    Default: ApiDataCache
+  DeploymentKey:
+    Type: String
+  DataSfToken:
+    Type: String
+    NoEcho: true
+    Default: ''
+Resources:
+  AnalyticsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal: {Service: lambda.amazonaws.com}
+          Action: sts:AssumeRole
+      ManagedPolicyArns: [arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]
+      Policies:
+      - PolicyName: AnalyticsObjectsOnly
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action: [s3:GetObject, s3:PutObject]
+            Resource: !Sub arn:aws:s3:::${ExistingDataBucket}/analytics-history/*
+          - Effect: Allow
+            Action: [dynamodb:GetItem, dynamodb:PutItem]
+            Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ExistingCacheTable}
+            Condition:
+              ForAllValues:StringEquals:
+                dynamodb:LeadingKeys: ['analytics-history:sf:v1']
+  AnalyticsLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: SafePathDailyAnalytics
+      Runtime: python3.11
+      Handler: lambda_daily_analytics.lambda_handler
+      Role: !GetAtt AnalyticsRole.Arn
+      Timeout: 240
+      MemorySize: 512
+      Code: {S3Bucket: !Ref ExistingDataBucket, S3Key: !Ref DeploymentKey}
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: !Ref ExistingDataBucket
+          DYNAMODB_TABLE_NAME: !Ref ExistingCacheTable
+          DATASF_API_KEY: !Ref DataSfToken
+  DailyRefreshRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: SafePathDailyCrimeHistoryRefresh
+      ScheduleExpression: cron(0 9 * * ? *)
+      State: ENABLED
+      Targets:
+      - Id: DailyHistory
+        Arn: !GetAtt AnalyticsLambda.Arn
+        Input: '{"action":"refresh-analytics"}'
+  DailyRefreshPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AnalyticsLambda
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt DailyRefreshRule.Arn
+  AnalyticsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ExistingApiId
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt AnalyticsLambda.Arn
+      PayloadFormatVersion: '2.0'
+  AnalyticsCsvRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ExistingApiId
+      RouteKey: GET /analytics.csv
+      Target: !Sub integrations/${AnalyticsIntegration}
+  AnalyticsSummaryRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ExistingApiId
+      RouteKey: GET /analytics-summary
+      Target: !Sub integrations/${AnalyticsIntegration}
+  AnalyticsManifestRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ExistingApiId
+      RouteKey: GET /analytics-manifest
+      Target: !Sub integrations/${AnalyticsIntegration}
+  ApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AnalyticsLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ExistingApiId}/*/GET/analytics*
+Outputs:
+  CsvUrl:
+    Value: !Sub https://${ExistingApiId}.execute-api.${AWS::Region}.amazonaws.com/prod/analytics.csv
+  SummaryUrl:
+    Value: !Sub https://${ExistingApiId}.execute-api.${AWS::Region}.amazonaws.com/prod/analytics-summary

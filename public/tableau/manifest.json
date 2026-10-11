@@ -1,14 +1,29 @@
 {
-  "refreshed_at_utc": "2026-10-10T06:33:15.552973+00:00",
-  "rows": 21460,
-  "window_days": 90,
+  "version": 1,
+  "refreshed_at_utc": "2026-10-10T23:52:44.114711+00:00",
+  "rows": 2723,
+  "window_days": 3,
+  "window_hours": 72,
+  "source_type": "police_dispatch_calls",
+  "skipped_rows": 0,
   "timezone": "America/Los_Angeles",
-  "source": "https://data.sfgov.org/resource/wg3w-h783.json",
-  "scope": "Police incident records with usable SF coordinates; excludes missing/outside coordinates",
-  "count_measure": "SUM(RecordCount) counts source report rows; COUNTD(ExternalId) counts unique incident IDs",
-  "area_filter_fields": [
+  "source": "https://data.sf.gov/resource/gnap-fj3t.json",
+  "fields": [
+    "RecordKey",
+    "ExternalId",
+    "Category",
+    "Neighborhood",
+    "District",
+    "EventDate",
+    "LocalTimestamp",
+    "Hour",
+    "Weekday",
+    "WeekdayNumber",
     "Latitude",
-    "Longitude"
+    "Longitude",
+    "RecordCount",
+    "SnapshotUTC"
   ],
-  "refresh": "Snapshot only. Regenerate and republish the Tableau extract after refreshing analytics exports."
+  "scope": "Mapped SF police dispatch calls; calls for service are not confirmed crimes or safety probabilities",
+  "csv_sha256": "6ffd71c5c6be05151435bbb30a748fa1cc98e7cb51687a5892459d55cd627d44"
 }
