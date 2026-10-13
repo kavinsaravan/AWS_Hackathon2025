@@ -88,14 +88,14 @@ function refreshSafePathData() {
   } finally {lock.releaseLock();}
 }
 
-function installDailyRefresh() {
+function installWeeklyRefresh() {
   refreshSafePathData();
   for (const trigger of ScriptApp.getProjectTriggers()) {
     if (trigger.getHandlerFunction()==='refreshSafePathData') ScriptApp.deleteTrigger(trigger);
   }
-  ScriptApp.newTrigger('refreshSafePathData').timeBased().atHour(4).everyDays(1).inTimezone('America/Los_Angeles').create();
+  ScriptApp.newTrigger('refreshSafePathData').timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(9).everyWeeks(1).inTimezone('America/Los_Angeles').create();
   const book=SpreadsheetApp.openById(SAFEPATH_SHEET_ID);
   const info=book.getSheetByName('RefreshInfo');
-  info.getRange(9,1,1,2).setValues([['Google import schedule','Daily, during the 4 AM hour, America/Los_Angeles']]);
-  console.log('Daily SafePath import installed. Tableau must also be connected to this Google Sheet with daily refresh enabled.');
+  info.getRange(9,1,1,2).setValues([['Google import schedule','Weekly, Monday during the 9 AM hour, America/Los_Angeles']]);
+  console.log('Weekly SafePath import installed. Tableau must also be connected to this Google Sheet with daily refresh enabled.');
 }

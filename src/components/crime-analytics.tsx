@@ -56,7 +56,7 @@ export default function CrimeAnalytics({ route, tableauUrl }: { route: Route; ta
               </LineChart></ResponsiveContainer>
             </div></div>
           </div>}
-        <p className="text-xs text-muted-foreground mt-5">{snapshot ? `Dispatch snapshot updated ${new Date(snapshot.refreshedUTC).toLocaleString()}. ` : ""}Includes dispatch calls with usable SF coordinates. Calls for service are not confirmed crimes. Area boundaries are approximate. Recent days may be incomplete due to reporting delays. The route index uses AWS dispatch and 311 reports separately from this dispatch snapshot; neither guarantees personal safety.</p>
+        <p className="text-xs text-muted-foreground mt-5">{snapshot ? `Dispatch snapshot updated ${new Date(snapshot.refreshedUTC).toLocaleString()}. ` : ""}Dashboard snapshot refreshes weekly on Mondays. Includes dispatch calls with usable SF coordinates. Calls for service are not confirmed crimes. Area boundaries are approximate. Recent days may be incomplete due to reporting delays. The route index uses AWS dispatch and 311 reports separately from this dispatch snapshot; neither guarantees personal safety.</p>
       </Card>
       <TableauDashboard viewUrl={tableauUrl} bounds={bounds} />
     </section>

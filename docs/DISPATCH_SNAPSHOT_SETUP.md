@@ -1,8 +1,8 @@
 # Single-source police dispatch snapshot
 
-The current dataset is one source: DataSF's mapped police dispatch records from the
-past 72 hours. The verified snapshot contains 2,723 records. These are calls for
-service, not confirmed crimes. Its timestamp is `2026-10-10T23:52:44.114711+00:00`.
+The dashboard dataset uses one source: DataSF's mapped police dispatch records from the
+past 72 hours. The snapshot verified on October 12, 2026 contains 2,764 records. These are calls for
+service, not confirmed crimes. Its timestamp is `2026-10-12T09:00:30.972698+00:00`.
 The original file name `sf-crime-incidents.csv` is kept to help update the existing
 Tableau text-file connection without renaming its table or fields.
 
@@ -12,9 +12,9 @@ Tableau text-file connection without renaming its table or fields.
 - [AWS provenance](https://scdwndv5z4.execute-api.us-east-1.amazonaws.com/prod/analytics-manifest)
 
 The Sheet's Incidents tab matches all 14 CSV fields, preserving identifiers as text,
-coordinates/counts as numbers, and event dates/times as typed date values. All 38,136
+coordinates/counts as numbers, and event dates/times as typed date values. All 38,710
 cells were read back and matched against the verified AWS snapshot. RefreshInfo
-records the source and states that automatic Google/Tableau import is deferred.
+records the source, weekly import schedule, and pending Tableau connection.
 
 ## Update the existing Tableau snapshot
 
@@ -63,10 +63,10 @@ exposes read-only CSV, summary, and manifest API endpoints. Failed exports do no
 replace an existing snapshot. Reads verify checksums and reject snapshots older
 than 72 hours. The original route-scoring stack was not modified.
 
-Automatic import into the Google Sheet and automatic Tableau refresh are deferred
-per the user's snapshot preference. `google-sheets/Code.gs` and its optional manifest
+Google Sheet imports and web snapshot publication are now scheduled weekly through Codex.
+The Tableau source connection is still pending. `google-sheets/Code.gs` and its optional manifest
 are prepared for later use. No Apps Script trigger has been installed or authorized.
-If enabled later, its daily import runs during the 4 AM hour in America/Los_Angeles,
+If enabled as an alternative later, its weekly import runs Monday during the 9 AM hour in America/Los_Angeles,
 stages the complete dataset before copying it in one operation, and clears any old
 tail by copying blank staging rows. It does not store credentials. Tableau Public's
 Google Sheets extract refresh is a separate daily schedule, not a live feed.
@@ -90,3 +90,11 @@ The main README is unchanged.
 Sources: [dispatch data](https://data.sf.gov/Public-Safety/Law-Enforcement-Dispatched-Calls-for-Service-Real-/gnap-fj3t),
 [Tableau data-source replacement](https://help.tableau.com/current/pro/desktop/en-us/connect_basic_replace.htm),
 [Tableau Public refresh limitations](https://help.tableau.com/current/pro/desktop/en-us/public_faq.htm).
+
+## Weekly dashboard updates
+
+Dashboard updates are scheduled for Mondays at 9 AM America/Los_Angeles through a Codex thread automation. Each run validates the latest AWS CSV and matching summary, updates the existing Google Sheet Incidents tab without changing its 14-field schema, refreshes the checked-in web snapshot, builds and deploys the frontend, and commits/pushes only refresh files. RefreshInfo records the imported snapshot and published status. Preserve previous data if validation or publication fails, and report any blocked step without claiming a successful refresh.
+
+The AWS export producer remains daily and the route safety engine keeps its existing frequent refresh. Weekly publication currently keeps the last 72 hours of dispatch records; it is not a seven-day historical archive. Codex scheduled runs require the desktop host and connected tools to be available. The optional Apps Script installer is now installWeeklyRefresh, Monday during the 9 AM hour. It is prepared but has not been installed or owner-authorized; do not enable it alongside the Codex automation.
+
+Tableau's published CSV extract does not automatically change when the website or Google Sheet changes. Connect the workbook to the Incidents tab once, preserve field names and all-sheet coordinate filters, and enable its Google Sheets data-sync option. Tableau may check that Sheet daily, but its source data changes weekly. Until this is completed, the website/Sheet update schedule does not imply that Tableau is refreshing.
