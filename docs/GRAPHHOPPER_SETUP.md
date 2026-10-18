@@ -20,6 +20,8 @@ The new routes use the existing prod stage with automatic deployments. Lambda in
 
 The proxy accepts only bounded requests and SF coordinates, fixes the upstream host, walking profile and number of alternatives, and returns only the required coordinates/distance/time. It never relays or logs upstream error payloads or authenticated URLs. Origin checks are an extra browser restriction, not authentication: the endpoints remain public and API Gateway throttling reduces bursts rather than imposing a daily quota. Monitor GraphHopper usage and adjust limits for traffic.
 
+Routes are limited to 2,000 coordinates per alternative, matching the Python scorer. More complex provider responses return HTTP 422 with a request to choose closer locations; route geometry is not silently truncated. The route/scorer boundary is covered by a cross-language test.
+
 ## Test
 
 `node --test backend/graphhopper-proxy/proxy.test.mjs scripts/test_route_integration.cjs`

@@ -70,3 +70,20 @@ test('rejects malformed provider geometry instead of forwarding it', async () =>
   const result = await handler(event({ origin: { lat: 37.77, lng: -122.42 }, destination: { lat: 37.79, lng: -122.39 } }, 'route'));
   assert.equal(result.statusCode, 502);
 });
+
+test('preserves an entire route at the 2000-coordinate scoring boundary', async () => {
+  const coordinates = Array.from({ length: 2000 }, (_, i) => [-122.42 + i / 1000000, 37.77]);
+  ready(async () => ({ ok: true, json: async () => ({ paths: [{ distance: 200, time: 120000, points: { coordinates } }] }) }));
+  const result = await handler(event({ origin: { lat: 37.77, lng: -122.42 }, destination: { lat: 37.77, lng: -122.418001 } }, 'route'));
+  assert.equal(result.statusCode, 200);
+  assert.deepEqual(JSON.parse(result.body).paths[0].points.coordinates, coordinates);
+});
+
+test('rejects a 2001-coordinate route with an actionable error before scoring', async () => {
+  ready(async () => ({ ok: true, json: async () => ({ paths: [{ distance: 200, time: 120000, points: { coordinates: Array.from({ length: 2001 }, (_, i) => [-122.42 + i / 1000000, 37.77]) } }] }) }));
+  const result = await handler(event({ origin: { lat: 37.77, lng: -122.42 }, destination: { lat: 37.77, lng: -122.418 } }, 'route'));
+  assert.equal(result.statusCode, 422);
+  assert.match(JSON.parse(result.body).error, /closer locations/);
+  assert.ok(!result.body.includes('test-private-key'));
+  assert.equal(JSON.parse(result.body).paths, undefined);
+});

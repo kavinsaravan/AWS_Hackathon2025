@@ -2,6 +2,7 @@ import base64
 import json
 import math
 import sys
+import subprocess
 import types
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -93,6 +94,32 @@ class RiskTests(unittest.TestCase):
 
 
 class ScoringTests(unittest.TestCase):
+    def test_proxy_output_and_scorer_share_the_coordinate_boundary(self):
+        # Exercise the actual JS handler and Python validator together, offline.
+        script = """
+            import { handler } from './backend/graphhopper-proxy/index.mjs';
+            process.env.GRAPHHOPPER_API_KEY = 'offline-fixture';
+            const results = [];
+            for (const count of [2000, 2001]) {
+                const coordinates = Array.from({length: count}, (_, i) => [-122.42 + i / 1000000, 37.77]);
+                globalThis.fetch = async () => ({ok: true, json: async () => ({paths: [{distance: 200, time: 120000, points: {coordinates}}]})});
+                const result = await handler({routeKey: 'POST /routing/route', requestContext: {http: {method: 'POST'}}, body: JSON.stringify({origin: {lat: 37.77, lng: -122.42}, destination: {lat: 37.77, lng: -122.418}})});
+                results.push({status: result.statusCode, data: JSON.parse(result.body)});
+            }
+            console.log(JSON.stringify(results));
+        """
+        result = subprocess.run(['node', '--input-type=module', '-e', script],
+                                cwd=Path(__file__).resolve().parents[2], capture_output=True, text=True, check=True)
+        accepted, rejected = json.loads(result.stdout)
+        self.assertEqual(accepted['status'], 200)
+        coordinates = [{'lat': lat, 'lng': lng} for lng, lat in accepted['data']['paths'][0]['points']['coordinates']]
+        self.assertEqual(len(route_scoring.validate_routes({'routes': [{'id': 1, 'coordinates': coordinates}]})[0][1]), 2000)
+        coordinates.append(coordinates[-1])
+        with self.assertRaises(ValueError):
+            route_scoring.validate_routes({'routes': [{'id': 1, 'coordinates': coordinates}]})
+        self.assertEqual(rejected['status'], 422)
+        self.assertNotIn('paths', rejected['data'])
+
     def test_bad_input(self):
         for payload in [None, {}, {'routes': []}, {'routes': [PAYLOAD['routes'][0]] * 2},
                         {'routes': [{'id': 1, 'coordinates': [{'lat': math.nan, 'lng': -122.4}] * 2}]},

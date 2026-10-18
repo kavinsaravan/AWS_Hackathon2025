@@ -1,5 +1,7 @@
 const BASE = 'https://graphhopper.com/api/1/';
 const ORIGIN = 'https://aws-hackathon2025.vercel.app';
+// Match the Python scorer's bounded per-route workload.
+export const MAX_ROUTE_COORDINATES = 2000;
 
 function response(statusCode, body) {
   return { statusCode, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }, body: JSON.stringify(body) };
@@ -66,10 +68,14 @@ export async function handler(event) {
       return response(200, { hits: data.hits.filter(hit => point(hit.point)).slice(0, 5).map(hit => ({ point: { lat: hit.point.lat, lng: hit.point.lng } })) });
     }
     if (!Array.isArray(data.paths)) throw new Error();
-    const paths = data.paths.slice(0, 3).map(path => {
+    const alternatives = data.paths.slice(0, 3);
+    if (alternatives.some(path => Array.isArray(path?.points?.coordinates) && path.points.coordinates.length > MAX_ROUTE_COORDINATES)) {
+      return response(422, { error: 'This route is too detailed to analyse. Please choose closer locations.' });
+    }
+    const paths = alternatives.map(path => {
       if (![path.distance, path.time].every(n => typeof n === 'number' && Number.isFinite(n) && n >= 0) ||
           !Array.isArray(path.points?.coordinates) || path.points.coordinates.length < 2 ||
-          path.points.coordinates.length > 20000 || path.points.coordinates.some(c =>
+          path.points.coordinates.some(c =>
             !Array.isArray(c) || c.length < 2 || !point({ lng: c[0], lat: c[1] }))) throw new Error();
       return { distance: path.distance, time: path.time, points: { coordinates: path.points.coordinates.map(c => [c[0], c[1]]) } };
     });

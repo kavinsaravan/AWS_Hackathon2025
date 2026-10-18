@@ -89,6 +89,17 @@ test('equal risks choose faster route first', async () => {
   assert.equal(result.routes[0].id, 2);
 });
 
+test('an oversized provider route shows the proxy complexity message without calling the scorer', async () => {
+  const f = fixture([route(0, 10)], assessment([0]));
+  let scoringRequested = false;
+  const client = load(async (url, options) => {
+    if (url.endsWith('/score-routes')) scoringRequested = true;
+    return url.endsWith('/routing/route') ? { ok: false, status: 422 } : f.fetch(url, options);
+  });
+  await assert.rejects(client.calculateRoutes('Origin', 'Destination'), /too detailed.*closer locations/);
+  assert.equal(scoringRequested, false);
+});
+
  test('routing requests use only the backend, without a browser API key', async () => {
   const f = fixture([route(0, 10)], assessment([1]));
   await load(f.fetch).calculateRoutes('Origin', 'Destination');

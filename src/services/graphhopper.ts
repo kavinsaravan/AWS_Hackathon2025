@@ -15,6 +15,9 @@ async function requestRouting<T>(path: string, body: unknown): Promise<T> {
       signal: controller.signal,
     })
     if (!response.ok) {
+      if (response.status === 422) {
+        throw new Error("This route is too detailed to analyse. Please choose closer locations.")
+      }
       throw new Error(response.status === 400
         ? "Please choose locations within San Francisco."
         : "Routing is unavailable. Please try again later.")
