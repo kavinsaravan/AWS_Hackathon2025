@@ -1,3 +1,5 @@
+> Current app status (October 18, 2026): the embedded Tableau dashboard and its connection settings have been removed from SafePath. The built-in police dispatch analytics, route scoring, Google Sheet, and weekly snapshot updates remain. Tableau-specific instructions below are historical reference, not active app requirements. The standalone Tableau Public workbook has not been deleted.
+
 # SafePath Tableau Public dashboard
 
 Current work uses a single police-dispatch snapshot. See [dispatch snapshot setup](DISPATCH_SNAPSHOT_SETUP.md) for the new CSV, typed Google Sheet, and the pending Tableau upload. The published workbook described below still uses the earlier police-incident extract until it is republished. Automatic Google/Tableau refresh is deferred.

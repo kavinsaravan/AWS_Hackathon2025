@@ -4,10 +4,9 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGri
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { routeArea, summarizeCrimeArea, type CrimeSnapshot } from "@/services/crimeAnalytics"
-import TableauDashboard from "./tableau-dashboard"
 import type { Route } from "./safe-path-app"
 
-export default function CrimeAnalytics({ route, tableauUrl }: { route: Route; tableauUrl: string }) {
+export default function CrimeAnalytics({ route }: { route: Route }) {
   const [snapshot, setSnapshot] = useState<CrimeSnapshot | null>(null)
   const [error, setError] = useState(false)
   const [citywide, setCitywide] = useState(false)
@@ -58,7 +57,6 @@ export default function CrimeAnalytics({ route, tableauUrl }: { route: Route; ta
           </div>}
         <p className="text-xs text-muted-foreground mt-5">{snapshot ? `Dispatch snapshot updated ${new Date(snapshot.refreshedUTC).toLocaleString()}. ` : ""}Dashboard snapshot refreshes weekly on Mondays. Includes dispatch calls with usable SF coordinates. Calls for service are not confirmed crimes. Area boundaries are approximate. Recent days may be incomplete due to reporting delays. The route index uses AWS dispatch and 311 reports separately from this dispatch snapshot; neither guarantees personal safety.</p>
       </Card>
-      <TableauDashboard viewUrl={tableauUrl} bounds={bounds} />
     </section>
   )
 }
