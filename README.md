@@ -17,12 +17,12 @@ Traditional navigation apps optimize for speed and distance but ignore critical 
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Web App (React)                           │
+│                    Web App (React)                          │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                   AWS API Gateway                            │
+│                   AWS API Gateway                           │
 └────────────────────┬────────────────────────────────────────┘
                      │
           ┌──────────┴──────────┐
@@ -38,7 +38,7 @@ Traditional navigation apps optimize for speed and distance but ignore critical 
 └──────────────────┘  └──────────────────┘
           ↓
 ┌─────────────────────────────────────────────────────────────┐
-│          San Francisco Open Data APIs (DataSF)               │
+│          San Francisco Open Data APIs (DataSF)              │
 │  • Crime Reports (hourly)  • 311 Hazards (15-min)           │
 │  • Police Calls (5-min)    • Street Lights (daily)          │
 └─────────────────────────────────────────────────────────────┘
