@@ -65,12 +65,7 @@ export async function fetchHotspots(
   const apiEndpoint = process.env.REACT_APP_API_ENDPOINT || ''
 
   if (!apiEndpoint) {
-    console.error('REACT_APP_API_ENDPOINT not configured')
-    // Return empty GeoJSON for development
-    return {
-      type: 'FeatureCollection',
-      features: []
-    }
+    throw new Error('Hotspot service is not configured')
   }
 
   const queryParams = new URLSearchParams({
@@ -82,96 +77,11 @@ export async function fetchHotspots(
 
   const url = `${apiEndpoint}/hotspots?${queryParams}`
 
-  try {
-    const response = await fetch(url)
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
-    const data = await response.json()
-    return data
-
-  } catch (error) {
-    console.error('Error fetching hotspots:', error)
-
-    // Return mock data for development
-    return getMockHotspots()
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Hotspot service returned HTTP ${response.status}`)
   }
-}
-
-/**
- * Mock hotspot data for development/testing
- */
-function getMockHotspots(): HotspotGeoJSON {
-  return {
-    type: 'FeatureCollection',
-    features: [
-      {
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [-122.4194, 37.7749] // Downtown SF
-        },
-        properties: {
-          id: 1,
-          radius_km: 0.35,
-          incident_count: 45,
-          severity_score: 2.8,
-          risk_level: 'High',
-          color: '#ef4444',
-          top_crimes: [
-            { type: 'ROBBERY', count: 15 },
-            { type: 'ASSAULT', count: 12 },
-            { type: 'THEFT', count: 18 }
-          ],
-          description: 'High risk area with 45 incidents. Most common: ROBBERY.'
-        }
-      },
-      {
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [-122.4080, 37.7853] // Tenderloin
-        },
-        properties: {
-          id: 2,
-          radius_km: 0.28,
-          incident_count: 38,
-          severity_score: 2.5,
-          risk_level: 'High',
-          color: '#ef4444',
-          top_crimes: [
-            { type: 'FIGHT NO WEAPON', count: 20 },
-            { type: 'SUSPICIOUS PERSON', count: 10 },
-            { type: 'ASSAULT', count: 8 }
-          ],
-          description: 'High risk area with 38 incidents. Most common: FIGHT NO WEAPON.'
-        }
-      },
-      {
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [-122.4376, 37.7599] // Castro
-        },
-        properties: {
-          id: 3,
-          radius_km: 0.22,
-          incident_count: 15,
-          severity_score: 1.7,
-          risk_level: 'Medium',
-          color: '#f59e0b',
-          top_crimes: [
-            { type: 'THEFT', count: 8 },
-            { type: 'VANDALISM', count: 4 },
-            { type: 'SUSPICIOUS PERSON', count: 3 }
-          ],
-          description: 'Medium risk area with 15 incidents. Most common: THEFT.'
-        }
-      }
-    ]
-  }
+  return response.json()
 }
 
 /**
