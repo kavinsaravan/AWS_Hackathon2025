@@ -65,13 +65,8 @@ GitHub Actions (Weekly Dashboard Refresh)
 ### Frontend (Web App)
 - **React 19.2** - Modern web framework
 - **TypeScript 4.9** - Type-safe JavaScript
-- **Tailwind CSS 3** - Utility-first styling
-- **Radix UI** - Accessible component library
 - **Leaflet 1.9 / React Leaflet 5** - Interactive maps
 - **Recharts 2.15** - Data visualization (Crime Analytics Dashboard)
-- **React Hook Form** - Form management
-- **CRACO 7** - Create React App configuration
-- **Vercel** - Deployment platform
 
 ### Machine Learning (Available for Training/Analysis)
 - **Logistic Regression** - Route preference prediction
@@ -335,59 +330,3 @@ cd backend/graphhopper-proxy && npm test
 ```bash
 npm run lint
 ```
-
-## 🧪 Testing & Quality Assurance
-
-**Comprehensive Test Coverage:**
-- **107 total tests** (all passing as of October 21, 2026)
-  - 36 backend Python unit tests (`backend/tests/`)
-  - 44 Python integration tests (`scripts/tests/`)
-  - 27 Node.js tests (proxy, routing, analytics, hotspot)
-- **Verification**: Active Lambda functions, safety snapshots, geocoding/routing/scoring
-- **Frontend**: Jest test runner with ESLint configuration
-- **Backend**: pytest with mocking and fixtures
-
-See `docs/VERIFICATION_2026-10-21.md` for latest verification results.
-
-## 📚 Documentation
-
-Comprehensive project documentation available in `/docs`:
-
-- **`DEPLOYMENT_AND_DATASETS.md`** - Complete deployment guide and managed release process
-- **`VERIFICATION_2026-10-21.md`** - Live verification evidence (107 tests passing)
-- **`WEEKLY_DASHBOARD_REFRESH.md`** - GitHub Actions workflow documentation
-- **`API_KEYS_AND_DATA_SOURCES.md`** - API setup and configuration guide
-- **`ROUTE_SAFETY_INTEGRATION.md`** - Safety scoring integration guide
-- **`GRAPHHOPPER_SETUP.md`** - Routing provider configuration
-- **`DISPATCH_SNAPSHOT_SETUP.md`** - Historical crime data context
-- **`HOTSPOT_DETECTION_IMPLEMENTATION.md`** - ML clustering documentation
-- **Plus 7 more** detailed guides covering all aspects of the system
-
-## 🏗️ React Components
-
-**Main Application Components:**
-- **`safe-path-app.tsx`** (9.7 KB) - Main app container, state management, route orchestration
-- **`route-map.tsx`** (7.9 KB) - Leaflet map with custom markers and polyline rendering
-- **`crime-analytics.tsx`** (5.4 KB) - Analytics dashboard with Recharts visualizations
-- **`location-input.tsx`** (4.4 KB) - Address search with autocomplete and saved locations
-- **`ui/`** - Radix UI primitives (Button, Card, Input, Select, etc.)
-
-**Service Layer:**
-- **`graphhopper.ts`** - Geocoding and routing API client
-- **`routeSafety.ts`** - Route safety assessment API client with validation
-- **`crimeAnalytics.ts`** - Analytics data loading and filtering
-- **`savedLocations.ts`** - Browser localStorage persistence
-
-## 🔄 CI/CD Pipeline
-
-**GitHub Actions Workflow** (`.github/workflows/weekly-dashboard-refresh.yml`):
-- **Trigger**: Mondays 09:00 LA time (manual/on-push also available)
-- **Steps**:
-  1. Validate snapshot with existing tests
-  2. Download latest 72-hour dispatch data
-  3. Build React app
-  4. Commit validated CSV/JSON files to `public/`
-  5. Verify Vercel publication
-- **Output**: `safety-analytics.json` and Tableau CSV exports
-
-
