@@ -39,30 +39,41 @@ Traditional navigation apps optimize for speed and distance but ignore critical 
           ↓
 ┌─────────────────────────────────────────────────────────────┐
 │          San Francisco Open Data APIs (DataSF)              │
-│  • Crime Reports (hourly)  • 311 Hazards (15-min)           │
-│  • Police Calls (5-min)    • Street Lights (daily)          │
+│  • Police Dispatch (gnap-fj3t) - 5-min refresh              │
+│  • 311 Service Requests (vw6y-z8j6) - Real-time             │
+│  • 2M+ datasets available (4 actively used)                 │
+└─────────────────────────────────────────────────────────────┘
+
+GitHub Actions (Weekly Dashboard Refresh)
+          ↓
+┌─────────────────────────────────────────────────────────────┐
+│  72-hour Analytics Export (CSV + JSON) → public/            │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ## 🔧 Tech Stack
 
 ### Backend (AWS Serverless)
-- **AWS Lambda** - Python 3.11 serverless functions
+- **AWS Lambda** - Python 3.11 & Node.js serverless functions
 - **DynamoDB** - Caches API data with 3-day TTL
 - **S3** - Backup storage for crime/hazard data
-- **API Gateway** - REST endpoints with CORS
-- **CloudWatch Events** - Hourly scheduled data refresh
+- **API Gateway v2** - HTTP API endpoints with CORS
+- **EventBridge** - 5-min safety refresh, daily analytics export
 - **CloudFormation** - Infrastructure as Code
+- **CloudWatch** - Logging and monitoring
 
 ### Frontend (Web App)
-- **React** - Modern web framework
-- **TypeScript** - Type-safe JavaScript
-- **Tailwind CSS** - Utility-first styling
+- **React 19.2** - Modern web framework
+- **TypeScript 4.9** - Type-safe JavaScript
+- **Tailwind CSS 3** - Utility-first styling
 - **Radix UI** - Accessible component library
-- **Leaflet** - Interactive maps
-- **React Leaflet** - React wrapper for Leaflet
+- **Leaflet 1.9 / React Leaflet 5** - Interactive maps
+- **Recharts 2.15** - Data visualization (Crime Analytics Dashboard)
+- **React Hook Form** - Form management
+- **CRACO 7** - Create React App configuration
+- **Vercel** - Deployment platform
 
-### Machine Learning
+### Machine Learning (Available for Training/Analysis)
 - **Logistic Regression** - Route preference prediction
 - **Multi-factor Safety Analyzer** - 6-dimension risk scoring
 - **DBSCAN Clustering** - Crime hotspot detection
@@ -72,10 +83,10 @@ Traditional navigation apps optimize for speed and distance but ignore critical 
 - **Geopy** - Geospatial calculations
 
 ### Data Sources (All Free)
-- **SF Crime Data** - data.sfgov.org (hourly updates)
-- **311 Service Requests** - 15-minute updates
-- **Active Police Calls** - 5-minute real-time updates
-- **Street Light Inventory** - Daily updates
+- **SF Crime Data (gnap-fj3t)** - data.sfgov.org, 5-min refresh
+- **311 Service Requests (vw6y-z8j6)** - Real-time updates
+- **GraphHopper API** - Routing and geocoding (free tier)
+- **2M+ DataSF datasets available** (4 actively used)
 
 ## ✨ Key Features
 
@@ -92,6 +103,13 @@ Traditional navigation apps optimize for speed and distance but ignore critical 
 - Side-by-side comparison with metrics
 - Visual map display with color-coded routes
 
+### 📊 Crime Analytics Dashboard
+- **72-hour police dispatch data visualization**
+- **Interactive bar charts** showing most reported call types by category
+- **Route-area vs citywide toggle** for contextual comparison
+- **Real-time incident metrics** with Recharts visualization
+- **Category-based analysis** of crime patterns
+
 ### 📊 Real-Time Data Integration
 - **Hourly crime data refresh** via Lambda automation
 - **15-minute 311 hazard updates**
@@ -99,7 +117,7 @@ Traditional navigation apps optimize for speed and distance but ignore critical 
 - **3-day DynamoDB cache** with automatic TTL
 - **SHA256 deduplication** to prevent duplicates
 
-### 🤖 Machine Learning Models
+### Machine Learning Models
 - **30+ input features**: User profile, route characteristics, temporal factors
 - **Binary classification**: Predicts user route preference
 - **Comprehensive analyzer**: 6 risk dimensions with specific warnings
@@ -111,6 +129,21 @@ Traditional navigation apps optimize for speed and distance but ignore critical 
 - **Configurable parameters**: Adjust cluster size (eps) and density (min_samples)
 - **Real-time updates**: Hotspots recalculated from latest crime data
 - **Optional map layer**: Toggle visibility without affecting route display
+
+## 🔌 API Endpoints
+
+The backend exposes the following REST API endpoints via AWS API Gateway v2:
+
+| Method | Path | Handler | Purpose |
+|--------|------|---------|---------|
+| `POST` | `/routing/geocode` | Node.js Lambda | Address → SF coordinates (GraphHopper) |
+| `POST` | `/routing/route` | Node.js Lambda | Coordinates → Walking paths (GraphHopper) |
+| `POST` | `/score-routes` | Python Lambda | **Main feature**: Score routes for safety |
+| `GET` | `/analytics.csv` | Python Lambda | Daily dispatch CSV export (gzipped) |
+| `GET` | `/analytics-summary` | Python Lambda | Daily analytics summary (JSON) |
+| `GET` | `/analytics-manifest` | Python Lambda | Analytics metadata & schema |
+| `POST` | `/fetch-new` | Python Lambda | Legacy generic API ingestion |
+| `GET` | `/data` | Python Lambda | Legacy cached data retrieval |
 
 ## 🚀 Getting Started
 
@@ -167,30 +200,42 @@ npm run build
    aws s3api put-bucket-versioning --bucket safepath-crime-data-${AWS_ACCOUNT_ID} --versioning-configuration Status=Enabled
    ```
 
-2. **Deploy infrastructure (DynamoDB, Lambda, API Gateway)**
+2. **Package Lambda functions**
    ```bash
-   # Note: S3 bucket must exist first (created manually in step 1)
-   # Then manually deploy Lambda, DynamoDB, and API Gateway
-   # CloudFormation stack deployment available in infrastructure/cloudformation-template.yaml
+   # Package routing backend (Python)
+   bash scripts/package_routing_backend.sh /tmp/lambda-routing.zip
+
+   # Package daily analytics (Python)
+   bash scripts/package_daily_analytics.sh /tmp/lambda-analytics.zip
    ```
 
-3. **Package and deploy Lambda function**
+3. **Deploy main infrastructure stack (DynamoDB, Lambda, API Gateway)**
    ```bash
-   cd lambda-package
-   zip -r ../lambda-deployment.zip .
-   aws s3 cp ../lambda-deployment.zip s3://safepath-crime-data-${AWS_ACCOUNT_ID}/
-   aws lambda update-function-code \
-     --function-name ApiDataFetcher \
-     --s3-bucket safepath-crime-data-${AWS_ACCOUNT_ID} \
-     --s3-key lambda-deployment.zip
+   python3 scripts/deploy_aws_backend.py \
+     --account ${AWS_ACCOUNT_ID} \
+     --api-id YOUR_API_ID \
+     --stack-name SafePathStack \
+     --lambda-zip /tmp/lambda-routing.zip \
+     --apply
    ```
 
-4. **Update Lambda environment variables**
+4. **Deploy analytics stack**
    ```bash
-   aws lambda update-function-configuration \
-     --function-name ApiDataFetcher \
-     --environment "Variables={S3_BUCKET_NAME=safepath-crime-data-${AWS_ACCOUNT_ID},DYNAMODB_TABLE_NAME=ApiDataCache,API_ENDPOINT=https://data.sfgov.org/resource/wg3w-h783.json}"
+   python3 scripts/deploy_daily_analytics.py --apply
    ```
+
+5. **Deploy GraphHopper proxy (Node.js Lambda)**
+   ```bash
+   python3 scripts/deploy_graphhopper_proxy.py
+   ```
+
+6. **Update environment variables**
+   ```bash
+   # Set REACT_APP_API_ENDPOINT in .env to your API Gateway URL
+   # Configure GRAPHHOPPER_API_KEY for the Node.js proxy Lambda
+   ```
+
+See `docs/DEPLOYMENT_AND_DATASETS.md` for detailed deployment instructions.
 
 ## 🧮 Safety Scoring Algorithm
 
@@ -214,8 +259,15 @@ Where:
 **Route Safety Score:**
 ```
 total_risk = sum(calculate_risk_score(incident) for incident in nearby_incidents)
-safety_score = 100 - normalize(total_risk)  # 0-100 scale
+safety_score = round(100 / (1 + total_risk), 1)  # 0-100 scale
 ```
+
+**Implementation Details:**
+- **RouteSegmentIndex**: Spatial indexing using 0.005-degree cells for efficient lookups
+- **Point-to-segment distance**: Measures distance to route line segments (not just vertices)
+- **SF bounds enforcement**: 37.70-37.83 lat, -122.53 to -122.35 lng
+- **1 km cutoff**: Incidents >1 km away are ignored (below detection threshold)
+- **Local planar projection**: Appropriate coordinate transformation for San Francisco
 
 ## 📊 Data Pipeline
 
@@ -268,7 +320,15 @@ python generate_binary_dataset.py        # Binary classification
 
 ### Run Tests
 ```bash
+# Frontend tests
 npm test
+
+# Backend Python tests (107 total tests - all passing)
+cd backend && python -m pytest tests/
+cd scripts && python -m pytest tests/
+
+# Node.js tests (27 tests)
+cd backend/graphhopper-proxy && npm test
 ```
 
 ### Lint Code
@@ -276,5 +336,58 @@ npm test
 npm run lint
 ```
 
+## 🧪 Testing & Quality Assurance
+
+**Comprehensive Test Coverage:**
+- **107 total tests** (all passing as of October 21, 2026)
+  - 36 backend Python unit tests (`backend/tests/`)
+  - 44 Python integration tests (`scripts/tests/`)
+  - 27 Node.js tests (proxy, routing, analytics, hotspot)
+- **Verification**: Active Lambda functions, safety snapshots, geocoding/routing/scoring
+- **Frontend**: Jest test runner with ESLint configuration
+- **Backend**: pytest with mocking and fixtures
+
+See `docs/VERIFICATION_2026-10-21.md` for latest verification results.
+
+## 📚 Documentation
+
+Comprehensive project documentation available in `/docs`:
+
+- **`DEPLOYMENT_AND_DATASETS.md`** - Complete deployment guide and managed release process
+- **`VERIFICATION_2026-10-21.md`** - Live verification evidence (107 tests passing)
+- **`WEEKLY_DASHBOARD_REFRESH.md`** - GitHub Actions workflow documentation
+- **`API_KEYS_AND_DATA_SOURCES.md`** - API setup and configuration guide
+- **`ROUTE_SAFETY_INTEGRATION.md`** - Safety scoring integration guide
+- **`GRAPHHOPPER_SETUP.md`** - Routing provider configuration
+- **`DISPATCH_SNAPSHOT_SETUP.md`** - Historical crime data context
+- **`HOTSPOT_DETECTION_IMPLEMENTATION.md`** - ML clustering documentation
+- **Plus 7 more** detailed guides covering all aspects of the system
+
+## 🏗️ React Components
+
+**Main Application Components:**
+- **`safe-path-app.tsx`** (9.7 KB) - Main app container, state management, route orchestration
+- **`route-map.tsx`** (7.9 KB) - Leaflet map with custom markers and polyline rendering
+- **`crime-analytics.tsx`** (5.4 KB) - Analytics dashboard with Recharts visualizations
+- **`location-input.tsx`** (4.4 KB) - Address search with autocomplete and saved locations
+- **`ui/`** - Radix UI primitives (Button, Card, Input, Select, etc.)
+
+**Service Layer:**
+- **`graphhopper.ts`** - Geocoding and routing API client
+- **`routeSafety.ts`** - Route safety assessment API client with validation
+- **`crimeAnalytics.ts`** - Analytics data loading and filtering
+- **`savedLocations.ts`** - Browser localStorage persistence
+
+## 🔄 CI/CD Pipeline
+
+**GitHub Actions Workflow** (`.github/workflows/weekly-dashboard-refresh.yml`):
+- **Trigger**: Mondays 09:00 LA time (manual/on-push also available)
+- **Steps**:
+  1. Validate snapshot with existing tests
+  2. Download latest 72-hour dispatch data
+  3. Build React app
+  4. Commit validated CSV/JSON files to `public/`
+  5. Verify Vercel publication
+- **Output**: `safety-analytics.json` and Tableau CSV exports
 
 
