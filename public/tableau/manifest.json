@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "refreshed_at_utc": "2026-10-20T09:00:30.914973+00:00",
-  "rows": 2435,
+  "refreshed_at_utc": "2026-10-26T09:00:30.784444+00:00",
+  "rows": 2501,
   "window_days": 3,
   "window_hours": 72,
   "source_type": "police_dispatch_calls",
@@ -25,5 +25,5 @@
     "SnapshotUTC"
   ],
   "scope": "Mapped SF police dispatch calls; calls for service are not confirmed crimes or safety probabilities",
-  "csv_sha256": "398bb9dc70e941198177ebc895b95f9b89aa6e8487a2fa772399136332370135"
+  "csv_sha256": "b8f2b27bddb832717e4b4f2d1acb65ff322562d90b06cdf591c5bb83b8070f2b"
 }
